@@ -1,0 +1,33 @@
+# Cache e bytecode Python
+__pycache__/
+*.py[cod]
+
+# Ambienti virtuali locali.
+# L'ambiente del progetto è un ambiente conda esterno all'albero della
+# repository; la regola resta come protezione contro ambienti creati
+# per errore dentro la cartella.
+.venv/
+venv/
+
+# File di sistema macOS
+.DS_Store
+
+# Checkpoint dei notebook Jupyter
+.ipynb_checkpoints/
+
+# Dati grezzi e derivati.
+# Non versionati perché pesanti e rigenerabili con lo script di
+# acquisizione. La cartella resta nella repository tramite .gitkeep.
+data/*
+!data/.gitkeep
+
+# Artefatti generati dagli esperimenti.
+# Non versionati perché rigenerabili eseguendo gli script.
+# Le tabelle e le figure finali stanno in results/ e sono versionate.
+experiments/*
+!experiments/.gitkeep
+
+# Modelli serializzati e archivi compressi
+*.pkl
+*.joblib
+*.zip
