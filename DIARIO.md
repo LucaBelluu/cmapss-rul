@@ -226,3 +226,125 @@ progetto.
 Ho registrato l'ambiente come kernel Jupyter con nome `cmapss-rul`, per
 evitare che i notebook vengano eseguiti con un interprete diverso da
 quello del progetto.
+
+## [25-08-2026] — Struttura della repository, versionamento e acquisizione dei dati
+
+### Manifesto delle dipendenze
+
+Ho fissato le versioni delle librerie in `requirements.txt`, generato a
+partire dall'ambiente effettivo anziché scritto a mano, così da includere
+anche le dipendenze transitive.
+
+Il file prodotto da `pip freeze` conteneva una riga inutilizzabile nella
+forma `packaging @ file:///percorso/di/build`. La causa è che il pacchetto
+`packaging` proviene dalla distribuzione conda del Python dell'ambiente e
+non da PyPI: pip non dispone di un indice da cui recuperarlo e ripiega sul
+percorso locale da cui è stato costruito, che non esiste su nessun'altra
+macchina. Una singola riga di questo tipo interrompe l'installazione
+dell'intero file.
+
+Ho generato il manifesto con `pip list --format=freeze`, che produce
+sempre pin nella forma `nome==versione`, ed escluso `pip`, `setuptools` e
+`wheel`, che sono infrastruttura dell'ambiente e non dipendenze del
+progetto. Ho registrato l'ambiente come kernel Jupyter di nome
+`cmapss-rul`, per evitare che i notebook vengano eseguiti con un
+interprete diverso da quello del progetto.
+
+### Struttura della repository
+
+Ho organizzato la repository separando il codice riutilizzabile (`src/`),
+l'orchestrazione degli esperimenti (`scripts/`), l'analisi e la
+narrazione (`notebooks/`), i dati (`data/`, con `raw/` per i file
+originali e `interim/` per i derivati), gli artefatti generati
+(`experiments/`) e gli output finali (`results/figures/` e
+`results/tables/`).
+
+Motivo: separare come si esegue una singola operazione da quali
+operazioni compongono un esperimento rende un esperimento riproducibile
+leggendo i comandi che lo compongono. Separare l'esecuzione dalla
+narrazione permette di eseguire i notebook dall'inizio alla fine in pochi
+secondi, perché leggono artefatti già prodotti e non ricalcolano nulla.
+
+Le cartelle ancora vuote contengono un file `.gitkeep`, perché git
+versiona file e non cartelle: senza segnaposto la struttura non
+comparirebbe nella repository.
+
+### Regole di esclusione dal versionamento
+
+Restano fuori dal versionamento i dati grezzi, gli artefatti degli
+esperimenti, i modelli serializzati, gli archivi compressi, la cache
+Python, i checkpoint dei notebook e i file di sistema di macOS. Entrano
+nel versionamento le tabelle e le figure finali in `results/`, che sono
+leggere e costituiscono la prova tracciabile dei risultati consultabile
+senza eseguire il codice.
+
+Per `data/` ed `experiments/` ho usato la forma `data/*` seguita da
+`!data/.gitkeep` anziché la più breve `data/`. Motivo: con `data/` git
+ignora l'intera cartella e non ne esamina il contenuto, quindi nessuna
+eccezione al suo interno può essere applicata; con `data/*` git continua
+a valutare i singoli percorsi e l'eccezione sul segnaposto funziona.
+
+Nota tecnica sulla verifica: `git check-ignore -v` riporta l'ultima
+regola che combacia anche quando questa è una negazione, e restituisce
+codice di uscita zero in entrambi i casi. Non è quindi un test
+affidabile per distinguere un file escluso da uno esplicitamente
+reincluso. La verifica affidabile consiste nell'ispezionare cosa entra
+davvero nell'area di stage.
+
+### Acquisizione del dataset
+
+Ho scaricato l'archivio del dataset dal NASA Prognostics Data Repository
+e collocato i file estratti in `data/raw/`, senza cartelle intermedie e
+senza modificarli. I file grezzi restano immutati: ogni trasformazione
+produrrà file separati in `data/interim/`, così che l'origine resti
+sempre distinguibile dal derivato. Insieme ai dati ho conservato la
+documentazione originale del dataset, cioè `readme.txt` e il documento
+sulla modellazione della propagazione del danno.
+
+L'acquisizione è manuale e non automatizzata. Limite dichiarato: la
+repository non contiene una procedura eseguibile per ottenere i dati, e
+chi la clona deve seguire le istruzioni di acquisizione documentate nel
+README, che riportano l'indirizzo della sorgente e la struttura attesa
+dei file. Ho valutato e poi scartato uno script di acquisizione: sarebbe
+rimasto nella repository senza essere mai stato eseguito, e uno script
+non testato dà l'apparenza di una procedura riproducibile senza esserlo.
+
+Verifica dei file collocati in `data/raw/`:
+
+| File | Righe | Unità | Colonne |
+|---|---|---|---|
+| train_FD001.txt | 20631 | 100 | 26 |
+| train_FD002.txt | 53759 | 260 | 26 |
+| train_FD003.txt | 24720 | 100 | 26 |
+| train_FD004.txt | 61249 | 249 | 26 |
+| test_FD001.txt | 13096 | 100 | 26 |
+| test_FD002.txt | 33991 | 259 | 26 |
+| test_FD003.txt | 16596 | 100 | 26 |
+| test_FD004.txt | 41214 | 248 | 26 |
+
+| File | Righe |
+|---|---|
+| RUL_FD001.txt | 100 |
+| RUL_FD002.txt | 259 |
+| RUL_FD003.txt | 100 |
+| RUL_FD004.txt | 248 |
+
+Le 26 colonne corrispondono a identificativo dell'unità, numero di ciclo,
+3 impostazioni operative e 21 letture di sensori. Il numero di righe di
+ciascun file di RUL coincide con il numero di unità del corrispondente
+file di test, come atteso: ogni motore di test è troncato prima del
+guasto e ha una sola etichetta di riferimento, che indica la vita utile
+residua all'ultimo ciclo osservato. Nei file di training le traiettorie
+arrivano invece al guasto, quindi la vita utile residua a ogni ciclo si
+ricava per differenza dall'ultimo ciclo della stessa unità.
+
+I quattro sottoinsiemi hanno dimensioni molto diverse: 709 motori di
+training in totale, di cui 100 in FD001 e in FD003, 260 in FD002 e 249 in
+FD004, per circa 160.000 cicli complessivi. Il numero di motori, e non il
+numero di righe, è la dimensione campionaria rilevante, perché il motore
+è l'unità di partizionamento imposta dalla struttura del dato. Cento
+unità sono una base ristretta per una cross-validation stabile, e questo
+vincola la scelta dei sottoinsiemi da utilizzare.
+
+Ho verificato le regole di esclusione contro i file reali dopo la loro
+collocazione: nessun file di dati compare tra quelli tracciati.
