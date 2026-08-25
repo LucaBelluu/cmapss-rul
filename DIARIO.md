@@ -227,29 +227,6 @@ Ho registrato l'ambiente come kernel Jupyter con nome `cmapss-rul`, per
 evitare che i notebook vengano eseguiti con un interprete diverso da
 quello del progetto.
 
-## [25-08-2026] — Struttura della repository, versionamento e acquisizione dei dati
-
-### Manifesto delle dipendenze
-
-Ho fissato le versioni delle librerie in `requirements.txt`, generato a
-partire dall'ambiente effettivo anziché scritto a mano, così da includere
-anche le dipendenze transitive.
-
-Il file prodotto da `pip freeze` conteneva una riga inutilizzabile nella
-forma `packaging @ file:///percorso/di/build`. La causa è che il pacchetto
-`packaging` proviene dalla distribuzione conda del Python dell'ambiente e
-non da PyPI: pip non dispone di un indice da cui recuperarlo e ripiega sul
-percorso locale da cui è stato costruito, che non esiste su nessun'altra
-macchina. Una singola riga di questo tipo interrompe l'installazione
-dell'intero file.
-
-Ho generato il manifesto con `pip list --format=freeze`, che produce
-sempre pin nella forma `nome==versione`, ed escluso `pip`, `setuptools` e
-`wheel`, che sono infrastruttura dell'ambiente e non dipendenze del
-progetto. Ho registrato l'ambiente come kernel Jupyter di nome
-`cmapss-rul`, per evitare che i notebook vengano eseguiti con un
-interprete diverso da quello del progetto.
-
 ### Struttura della repository
 
 Ho organizzato la repository separando il codice riutilizzabile (`src/`),
