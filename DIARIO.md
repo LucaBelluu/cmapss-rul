@@ -6,28 +6,23 @@ Prognostics Data Repository.
 Task: regressione della vita utile residua (Remaining Useful Life) di
 motori aeronautici a partire da letture di sensori.
 
-## Obiettivo e domande di analisi
+## Obiettivo
 
 La consegna richiede di analizzare, studiare e addestrare modelli di
-machine learning sul dataset scelto, e di individuare con le tecniche di
-model selection e validazione studiate nel corso il modello migliore nel
-predire la variabile target. Il deliverable è una repository pubblica.
+machine learning sul dataset scelto. Tutti i modelli per la regressione
+visti durante il corso devono essere confrontati e commentati. Il
+deliverable è una repository pubblica.
 
-Le domande che il lavoro intende chiudere:
+Il lavoro è quindi vincolato a due esiti congiunti: un confronto che
+copra per intero il repertorio di regressione del programma, condotto
+sotto un protocollo di valutazione unico e a parità di dati e di
+condizioni; e un commento di ciascun modello che ne legga il
+comportamento su questo dataset, non limitato al valore della metrica.
 
-1. **Confronto tra famiglie di modelli.** Sotto un protocollo di
-   valutazione unico e a parità di dati e di condizioni, quale famiglia
-   di modelli (lineare regolarizzata, additiva non lineare, basata su
-   alberi, kernel, reti neurali) predice meglio la vita utile residua, e
-   di quanto il vantaggio supera la variabilità tra le partizioni?
-
-2. **Costo della complessità.** Il guadagno predittivo dei modelli più
-   complessi giustifica la perdita di interpretabilità rispetto a una
-   baseline lineare regolarizzata?
-
-3. **Effetto della struttura del dato.** Quanto incide sulla stima delle
-   prestazioni il fatto che le osservazioni siano cicli di funzionamento
-   raggruppati per motore, anziché osservazioni indipendenti?
+Il dataset impone un vincolo che il confronto deve rispettare: le
+osservazioni sono cicli di funzionamento raggruppati per motore e non
+sono indipendenti. Il protocollo di valutazione è costruito di
+conseguenza.
 
 ---
 
@@ -358,3 +353,137 @@ La scrittura del README è rimandata alla fase conclusiva del lavoro, per
 poterlo redigere sul progetto completo anziché su ipotesi. Limite
 dichiarato: fino ad allora la repository è pubblica ma priva di una
 descrizione leggibile dall'esterno.
+
+## [25-08-2026] — CORREZIONE: formulazione della consegna e obiettivo del lavoro
+
+CORREZIONE: l'intestazione del diario riportava la consegna in una forma
+non corrispondente al testo ufficiale e vi aggiungeva tre domande di
+analisi formulate in proprio.
+
+Il testo ufficiale della consegna è: analizzare, studiare e addestrare
+modelli di machine learning sul dataset scelto; tutti i modelli per la
+regressione visti durante il corso devono essere confrontati e
+commentati.
+
+Cosa cambia rispetto alla formulazione precedente:
+
+- il perimetro dei modelli non è una scelta di progetto ma un obbligo di
+  copertura: l'assenza dal confronto di un modello di regressione
+  presente nel programma è una consegna incompleta;
+- il commento di ciascun modello ha lo stesso peso del confronto
+  numerico, e non è un complemento della tabella dei risultati;
+- la consegna non chiede di formulare domande di ricerca proprie. Le tre
+  domande che comparivano in intestazione sono state rimosse: erano un
+  livello interpretativo aggiunto sopra la consegna, e mantenerle avrebbe
+  spostato il lavoro verso la risposta a quelle domande anziché verso la
+  copertura richiesta.
+
+Ho conservato come criteri di conduzione, e non come domande, il
+confronto a parità di condizioni e la lettura del divario tra modelli in
+rapporto alla variabilità della stima: sono il modo in cui il confronto
+richiesto viene reso difendibile, non un obiettivo aggiuntivo.
+
+Motivo della correzione per voce nuova anziché per modifica della voce
+originale: le voci cronologiche già scritte non si riscrivono.
+L'intestazione, che non è cronologica, è stata invece sostituita.
+
+## [25-08-2026] — CORREZIONE: perimetro delle tecniche fissato sui laboratori del corso
+
+CORREZIONE: il perimetro registrato in precedenza era una ricostruzione a
+memoria del programma. Poiché la consegna impone il confronto di tutti i
+modelli di regressione visti nel corso, l'elenco è stato riscritto sui
+notebook dei laboratori, che sono la fonte di ciò che il corso ha
+trattato. I laboratori di classificazione non entrano nel perimetro,
+perché il task del progetto è di regressione.
+
+### Modelli da confrontare
+
+| Modello | Laboratorio |
+|---|---|
+| Regressione lineare semplice e multipla (OLS) | 3 |
+| Ridge | 7 |
+| Lasso | 7 |
+| Elastic Net | 7 |
+| Principal Components Regression | 7 |
+| Regressione polinomiale | 8 |
+| Step functions | 8 |
+| Regression spline su base B-spline | 8 |
+| Generalized Additive Model | 8 |
+| Albero di regressione con pruning per cost-complexity | 9 |
+| Bagging di alberi | 9 |
+| Random Forest | 10 |
+| AdaBoost | 10 |
+| Gradient Boosting | 10 |
+| XGBoost | 10 |
+| Support Vector Regression, kernel lineare | 11 |
+| Support Vector Regression, kernel radiale | 11 |
+| Support Vector Regression, kernel polinomiale | 11 |
+| Rete neurale multistrato (MLP) | 11 |
+
+Le spline del corso sono regression spline su base B-spline, con numero
+di nodi e grado come iperparametri: non smoothing spline né natural
+spline. Le step functions non corrispondono a una classe di libreria e
+vanno costruite come variabili indicatrici su intervalli della variabile.
+
+### Selezione delle variabili
+
+Best subset selection, forward stepwise selection, backward stepwise
+selection (laboratorio 7). La backward stepwise nel materiale è proposta
+come esercizio e non svolta: va implementata interamente.
+
+### Ricampionamento e validazione
+
+Validation set approach, LOOCV, K-Fold, bootstrap (laboratorio 6). Il
+bootstrap del corso è una funzione di ricampionamento scritta da zero,
+usata per stimare la variabilità di una statistica e non come procedura
+di addestramento. Qui il ricampionamento avviene sui motori e non sulle
+righe, per la stessa ragione per cui il partizionamento avviene per
+unità.
+
+### Conduzione degli esperimenti
+
+Composizione di pre-processing e modello in una pipeline unica,
+standardizzazione delle variabili, selezione degli iperparametri per
+ricerca esaustiva su griglia valutata in cross-validation (laboratori 7 e
+11). Collocano il pre-processing dentro il flusso di validazione anziché
+prima di esso.
+
+Metriche di regressione del corso: MSE, RMSE, MAE, R quadro.
+
+### Lettura dei modelli
+
+Percorso dei coefficienti al variare della penalizzazione (laboratorio
+7), funzioni parziali dei termini del GAM (laboratorio 8), importanza
+delle variabili da riduzione di impurità e per permutazione (laboratorio
+10). Sono gli strumenti con cui viene prodotto il commento di ciascun
+modello richiesto dalla consegna.
+
+### Metodi non supervisionati
+
+PCA, K-Means, clustering gerarchico (laboratorio 12): strumenti di
+esplorazione e di riduzione della dimensionalità, non modelli in
+confronto.
+
+### Esclusione di KNN regressivo
+
+Confermata l'esclusione, con motivazione sostituita.
+
+Motivo: nei laboratori KNN compare una sola volta, come una delle
+alternative suggerite per un esercizio di classificazione dopo riduzione
+con PCA, e non compare in nessuna forma regressiva. La consegna richiede
+il confronto dei modelli di regressione visti nel corso, e KNN per la
+regressione non è tra questi.
+
+Cade la motivazione precedente, che aggiungeva la ridondanza rispetto ad
+alberi ed ensemble: sotto un obbligo di copertura, la ridondanza non è un
+criterio ammissibile per escludere un modello. Vale soltanto
+l'appartenenza al programma.
+
+### Tecniche fuori dal materiale del corso
+
+Vanno segnalate come tali ovunque compaiano: la cross-validation con
+vincolo di gruppo, che è la trasposizione del K-Fold a dati raggruppati e
+che la struttura del dataset rende obbligatoria; le implementazioni
+alternative di gradient boosting; i metodi di combinazione di modelli
+eterogenei; i modelli che trattano esplicitamente la struttura
+sequenziale delle traiettorie.
