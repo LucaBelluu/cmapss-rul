@@ -325,3 +325,36 @@ vincola la scelta dei sottoinsiemi da utilizzare.
 
 Ho verificato le regole di esclusione contro i file reali dopo la loro
 collocazione: nessun file di dati compare tra quelli tracciati.
+
+## [25-08-2026] — Messa sotto controllo di versione e pubblicazione della repository
+
+Ho configurato l'identità di autore a livello locale della repository e
+non globale, così da non alterare la configurazione degli altri progetti
+presenti sulla macchina. La configurazione precede il primo commit
+perché l'autore viene inciso al momento della creazione del commit e
+modificarlo dopo richiede di riscrivere la cronologia.
+
+Ho registrato il primo commit con i dieci file dell'impostazione
+iniziale: regole di esclusione, diario, manifesto delle dipendenze e
+segnaposto delle cartelle. Verificato che nessun file di dati sia entrato
+nella cronologia.
+
+Ho creato la repository remota pubblica senza inizializzarla con file
+predefiniti, perché un commit iniziale generato dal servizio remoto
+avrebbe una cronologia disgiunta da quella locale e impedirebbe il primo
+invio. Autenticazione via token personale con ambito limitato alla
+gestione delle repository, generato specificamente per questo progetto
+anziché riutilizzarne uno esistente.
+
+Repository allineata al remoto. Verificato dall'interfaccia web che la
+cartella dei dati contenga il solo segnaposto.
+
+Imperfezione registrata: due commit consecutivi sul diario portano lo
+stesso messaggio pur contenendo modifiche diverse. Ho scelto di non
+riscrivere la cronologia per correggerlo, dato che l'operazione avrebbe
+un costo superiore al difetto.
+
+La scrittura del README è rimandata alla fase conclusiva del lavoro, per
+poterlo redigere sul progetto completo anziché su ipotesi. Limite
+dichiarato: fino ad allora la repository è pubblica ma priva di una
+descrizione leggibile dall'esterno.
