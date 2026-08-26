@@ -487,3 +487,246 @@ che la struttura del dataset rende obbligatoria; le implementazioni
 alternative di gradient boosting; i metodi di combinazione di modelli
 eterogenei; i modelli che trattano esplicitamente la struttura
 sequenziale delle traiettorie.
+
+## [26-08-2026] — Modulo di caricamento e verifica di integrità dei dati grezzi
+
+Il primo codice del progetto è il modulo che legge i file grezzi, insieme allo
+script che ne verifica l'integrità.
+
+### Modulo di caricamento
+
+`src/data.py` è l'unico punto della repository in cui i file di `data/raw/`
+vengono aperti. Restituisce DataFrame con colonne nominate e tipizzate e una
+struttura `CmapssSubset` che tiene insieme training, test ed etichette RUL di uno
+stesso sottoinsieme.
+
+Scelte di implementazione e relative motivazioni:
+
+- La lettura avviene senza passare i nomi delle colonne, che vengono assegnati
+  solo dopo la verifica che il file ne contenga 26. Motivo: passando i nomi in
+  fase di lettura, un file con un numero di campi diverso verrebbe adattato
+  silenziosamente invece di far fallire il caricamento.
+- Le colonne interamente vuote vengono rimosse prima del controllo. Motivo: le
+  righe dei file originali terminano con spazi e, a seconda della versione di
+  pandas, questo produce una colonna finale spuria.
+- `unit` e `cycle` sono tipizzati come interi. Motivo: sono conteggi, e lasciarli
+  in virgola mobile renderebbe fragili i raggruppamenti per unità, su cui si
+  regge il vincolo di partizionamento per motore.
+- La radice della repository è ricavata dalla posizione del file e non dalla
+  directory di lavoro. Motivo: il caricamento deve funzionare in modo identico da
+  uno script lanciato dalla radice e da un notebook che risiede in `notebooks/`.
+- I sensori sono numerati per posizione (`sensor_01` ... `sensor_21`). Motivo: la
+  numerazione è verificabile direttamente sul file, mentre la corrispondenza con
+  le sigle fisiche dipende da una fonte esterna al dato.
+
+Gli script si invocano come moduli (`python -m scripts.nome`) e non per percorso.
+Motivo: l'invocazione per percorso colloca `scripts/` in cima al percorso di
+ricerca di Python anziché la radice, e l'import di `src` fallisce. La soluzione
+alternativa, cioè manipolare `sys.path` dentro ogni script, è una toppa che si
+propagherebbe a tutti gli script successivi.
+
+### Verifica di integrità
+
+`scripts/verify_raw_data.py` controlla numero di righe e di unità di ogni file
+contro valori attesi cablati nel codice, assenza di valori mancanti, contiguità
+degli identificativi delle unità, consecutività dei numeri di ciclo entro ogni
+unità, corrispondenza tra unità di test ed etichette RUL, positività delle
+etichette.
+
+Il controllo sulla consecutività dei cicli è il più importante: se una traiettoria
+avesse cicli mancanti, la RUL costruita per differenza dall'ultimo ciclo sarebbe
+sbagliata senza che nulla lo segnali.
+
+I valori attesi sono pin di integrità e non parametri: uno scostamento indica
+un'acquisizione diversa da quella su cui il progetto è costruito.
+
+ESITO: tutti i controlli superati sui quattro sottoinsiemi.
+
+### Discrepanza con la documentazione ufficiale
+
+Il readme distribuito con il dataset attribuisce a FD004 248 traiettorie di
+training e 249 di test. I file contengono l'opposto: 249 unità di training (61249
+righe) e 248 di test (41214 righe). La stessa inversione compare nelle fonti
+secondarie che ricopiano la tabella del readme.
+
+Il conteggio adottato è quello ricavato dai file. Motivo: la fonte primaria è il
+dato, non la documentazione che lo accompagna.
+
+## [26-08-2026] — Esplorazione, perimetro sperimentale e definizione del target
+
+### Artefatti prodotti
+
+`src/explore.py` calcola le statistiche descrittive, `scripts/run_exploration.py`
+le salva come otto file CSV in `experiments/exploration/`, e
+`notebooks/01_esplorazione.ipynb` li legge producendo otto figure in
+`results/figures/` e la tabella riassuntiva in `results/tables/`.
+
+La separazione risponde a un criterio: il notebook non apre i dati grezzi e non
+esegue calcoli, quindi si esegue in pochi secondi e non può divergere dagli
+artefatti registrati. `experiments/` non è versionato perché rigenerabile,
+`results/` sì perché è la traccia verificabile di ciò che è stato osservato.
+
+### Difetto nel criterio di individuazione delle variabili costanti
+
+Sintomo: la libreria di calcolo numerico ha emesso avvisi di correlazione non
+definita su FD001 e FD003, e l'elenco delle variabili costanti risultava
+incoerente con il conteggio dei valori distinti riportato accanto (due variabili
+con un solo valore distinto non comparivano tra le costanti).
+
+Causa: il criterio era `deviazione standard uguale a zero`. Su una colonna di
+valori identici la deviazione standard calcolata numericamente non è esattamente
+nulla ma un residuo di arrotondamento dell'ordine di 1e-13, e il confronto con
+zero fallisce.
+
+Soluzione: il criterio è ora il numero di valori distinti, esatto per costruzione.
+Le variabili costanti sono inoltre escluse dal calcolo delle correlazioni, il che
+elimina gli avvisi alla radice invece di sopprimerli.
+
+L'errore non faceva fallire nulla e produceva un elenco plausibile: le due
+variabili mancate sarebbero entrate nei modelli come colonne prive di
+informazione.
+
+### Struttura dei quattro sottoinsiemi
+
+| Sottoinsieme | Motori | Durata mediana | Durata min | Durata max | Dev. std | Regimi | Costanti | max abs Pearson |
+|---|---|---|---|---|---|---|---|---|
+| FD001 | 100 | 199 | 128 | 362 | 46,3 | 1 | 7 | 0,70 |
+| FD002 | 260 | 199 | 128 | 378 | 46,8 | 6 | 0 | 0,07 |
+| FD003 | 100 | 220,5 | 145 | 525 | 86,5 | 1 | 6 | 0,69 |
+| FD004 | 249 | 234 | 128 | 543 | 73,1 | 6 | 0 | 0,08 |
+
+Le variabili costanti su entrambi i sottoinsiemi a regime singolo sono
+`setting_3` e i sensori 01, 05, 16, 18, 19. Il sensore 10 è costante su FD001 ma
+assume quattro valori su FD003.
+
+Su FD002 e FD004 nessuna variabile risulta costante, ma non per maggiore
+informatività: rapportando la deviazione standard misurata dentro un singolo
+regime a quella complessiva, su FD002 il rapporto non supera 0,18 per alcun
+sensore e per la maggior parte resta sotto 0,06. Fissata la condizione di volo, la
+variabilità delle letture quasi scompare. La variabilità osservata accorpando i
+sei regimi è quindi dovuta al regime e non al degrado, ed è la ragione per cui la
+correlazione marginale con il target si annulla.
+
+### Perimetro sperimentale: FD001 e FD003
+
+Gli esperimenti sono condotti su FD001 e FD003.
+
+Motivo: la coppia tiene fermo il regime di volo e fa variare il solo numero di
+modi di guasto. Il pre-processing resta identico sui due sottoinsiemi, il
+protocollo è letteralmente lo stesso, e la replica del confronto su due
+popolazioni diverse permette di distinguere una conclusione sui modelli da una
+conclusione su un singolo dataset. Le due popolazioni sono effettivamente diverse:
+FD003 ha traiettorie più lunghe e quasi doppia dispersione.
+
+Alternative scartate:
+
+- Solo FD001. Un solo sottoinsieme non consente di verificare se la graduatoria
+  dei modelli sia stabile, e l'unica motivazione dell'esclusione degli altri
+  sarebbe il costo.
+- Tutti e quattro come problemi separati. Scartata per il costo: con traiettorie
+  da 54000 e 61000 righe, i modelli il cui costo di addestramento cresce più che
+  linearmente nel numero di righe (macchine a vettori di supporto, modelli
+  additivi generalizzati, selezione esaustiva dei sottoinsiemi di variabili)
+  diventerebbero il collo di bottiglia. Il rischio non è la durata degli
+  esperimenti ma la pressione a escludere modelli dal confronto, che è esattamente
+  ciò che la consegna vieta. In più raddoppierebbe il lavoro di commento, che ha
+  lo stesso peso del confronto numerico.
+- FD001 e FD002. FD002 ha una distribuzione delle durate praticamente identica a
+  FD001, quindi la replica sarebbe meno informativa rispetto a FD003.
+- Unione dei quattro in un unico insieme. Mescola popolazioni con regimi e modi di
+  guasto diversi e rende impossibile qualunque affermazione sulla difficoltà
+  differenziale.
+
+Limite dichiarato: il lavoro non copre il caso a condizioni operative multiple, e
+le conclusioni valgono per il regime singolo. Rendere utilizzabili FD002 e FD004
+richiederebbe uno stadio di normalizzazione dei sensori entro regime, che
+sposterebbe il baricentro del lavoro dalla comparazione tra modelli alla
+progettazione del pre-processing.
+
+### Previsione smentita sulla collinearità
+
+L'aspettativa iniziale era che i sensori più correlati con il target fossero anche
+fortemente correlati tra loro, e che la dimensionalità effettiva fosse molto minore
+di 21. La misura la smentisce: su FD001 una sola coppia su 105 supera 0,9 in
+valore assoluto (`sensor_09` e `sensor_14`, 0,963), su FD003 tre coppie su 120.
+
+Conseguenza per il seguito: su questi dati la giustificazione della
+regolarizzazione e della regressione sulle componenti principali non può poggiare
+sulla ridondanza tra variabili esplicative, che è modesta. Va motivata sul
+rapporto tra numero di variabili e numero di unità indipendenti: le righe sono
+decine di migliaia, ma i motori sono cento, e la numerosità campionaria rilevante
+è la seconda.
+
+### Definizione del target
+
+Il target è la vita utile residua, ottenuta sulle traiettorie di training come
+differenza tra il ciclo del guasto e il ciclo corrente. Sulle traiettorie di test,
+troncate prima del guasto, la stessa quantità si ricava dal file di etichette:
+`src/target.py` implementa le due strade separatamente.
+
+Sul target è applicata una censura a soglia, con soglia fissata a 125 cicli.
+
+Motivo: nella prima parte della vita di un motore il degrado non è osservabile dai
+sensori, e le letture di unità con vite residue molto diverse sono in quella fase
+indistinguibili. Un target lineare chiede di predire valori diversi a partire da
+ingressi uguali, e questa componente irriducibile pesa in modo sproporzionato in
+una metrica quadratica perché ricade sui valori più grandi.
+
+La soglia di 125 è inferiore alla durata della traiettoria più breve di entrambi i
+sottoinsiemi in perimetro (128 cicli in FD001, 145 in FD003), quindi ogni motore
+attraversa sia la fase censurata sia la fase di degrado e nessuna traiettoria
+risulta interamente costante.
+
+Alternative scartate:
+
+- Target lineare non censurato. Introduce nella metrica una componente che nessun
+  modello può ridurre, indebolendo proprio il confronto tra modelli.
+- Soglia scelta per cross-validation. Non è un iperparametro ma parte della
+  definizione del problema: cambiando la soglia cambia la scala del target, e
+  abbassandola l'errore quadratico medio cala per costruzione. Un confronto tra
+  soglie basato sull'errore selezionerebbe sempre la più bassa.
+- Confronto completo su entrambe le definizioni. Scartata per il costo, con lo
+  stesso ragionamento applicato ai sottoinsiemi.
+
+È previsto un controllo di sensibilità: a fine lavoro il modello risultato migliore
+e la baseline lineare regolarizzata vengono rieseguiti anche con target non
+censurato. Sono due addestramenti aggiuntivi, e rendono verificabile se la
+graduatoria dipenda dalla soglia.
+
+### Verifica dell'assunzione su cui poggia la censura
+
+La censura assume che nella fase iniziale di vita le letture non varino al variare
+della vita residua. L'assunzione è misurata calcolando la correlazione tra sensori
+e vita utile residua separatamente sopra e sotto la soglia.
+
+| Sottoinsieme | Sensore | Pearson oltre soglia | Pearson entro soglia |
+|---|---|---|---|
+| FD001 | sensor_11 | -0,17 | -0,77 |
+| FD001 | sensor_04 | -0,16 | -0,74 |
+| FD001 | sensor_12 | +0,16 | +0,74 |
+| FD001 | sensor_07 | +0,14 | +0,72 |
+| FD001 | sensor_15 | -0,14 | -0,71 |
+| FD003 | sensor_11 | -0,32 | -0,78 |
+| FD003 | sensor_04 | -0,28 | -0,73 |
+| FD003 | sensor_13 | -0,42 | -0,69 |
+| FD003 | sensor_08 | -0,42 | -0,69 |
+| FD003 | sensor_17 | -0,33 | -0,70 |
+
+Su FD001 la separazione è netta e l'assunzione regge: la censura è coerente con la
+struttura del dato e non solo con una convenzione.
+
+Su FD003 la separazione esiste ma è meno pronunciata: sopra soglia le correlazioni
+raggiungono 0,42, quindi una parte di informazione utile è presente già prima
+della soglia e la censura la scarta. La lettura plausibile è che con due modi di
+guasto una parte della popolazione degradi più precocemente, ma resta
+un'interpretazione.
+
+Limite dichiarato: la soglia è un'ipotesi di modellazione e non una quantità
+misurata, i valori assoluti delle metriche dipendono da essa, e su FD003 scarta una
+parte di segnale. La soglia non è stata modificata dopo questa misura: era fissata
+a priori, e cambiarla dopo averla vista sarebbe una scelta fatta guardando il
+risultato.
+
+Su FD002 e FD004 le correlazioni sopra soglia sono nulle e sotto soglia raggiungono
+appena 0,10, il che conferma per via indipendente che in quei sottoinsiemi il
+segnale è schiacciato dal regime operativo e non dalla fase di vita.
