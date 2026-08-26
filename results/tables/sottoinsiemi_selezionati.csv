@@ -1,0 +1,7 @@
+sottoinsieme,metodo,k,rmse,variabili
+FD001,best_subset,17,20.331438317186677,cycle sensor_02 sensor_03 sensor_04 sensor_06 sensor_07 sensor_08 sensor_09 sensor_11 sensor_12 sensor_13 sensor_14 sensor_15 sensor_17 sensor_20 sensor_21 setting_2
+FD001,forward_stepwise,17,20.331438317186677,cycle sensor_02 sensor_03 sensor_04 sensor_06 sensor_07 sensor_08 sensor_09 sensor_11 sensor_12 sensor_13 sensor_14 sensor_15 sensor_17 sensor_20 sensor_21 setting_2
+FD001,backward_stepwise,17,20.331438317186677,cycle sensor_02 sensor_03 sensor_04 sensor_06 sensor_07 sensor_08 sensor_09 sensor_11 sensor_12 sensor_13 sensor_14 sensor_15 sensor_17 sensor_20 sensor_21 setting_2
+FD003,best_subset,15,19.895622056849724,sensor_02 sensor_03 sensor_04 sensor_06 sensor_08 sensor_09 sensor_10 sensor_11 sensor_13 sensor_14 sensor_15 sensor_17 sensor_20 sensor_21 setting_1
+FD003,forward_stepwise,15,19.89562205684972,sensor_02 sensor_03 sensor_04 sensor_06 sensor_08 sensor_09 sensor_10 sensor_11 sensor_13 sensor_14 sensor_15 sensor_17 sensor_20 sensor_21 setting_1
+FD003,backward_stepwise,15,19.895622056849724,sensor_02 sensor_03 sensor_04 sensor_06 sensor_08 sensor_09 sensor_10 sensor_11 sensor_13 sensor_14 sensor_15 sensor_17 sensor_20 sensor_21 setting_1

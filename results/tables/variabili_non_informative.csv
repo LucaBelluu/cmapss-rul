@@ -1,0 +1,3 @@
+sottoinsieme,segno_non_stabile,escluse_dalla_selezione,annullate_da_lasso,indicate_da_piu_procedure
+FD001,setting_1 setting_2,setting_1,nessuna,setting_1
+FD003,sensor_07 setting_1 setting_2,cycle sensor_07 sensor_12 setting_2,sensor_07 sensor_12 setting_1 setting_2,sensor_07 setting_2

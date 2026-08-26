@@ -1073,3 +1073,310 @@ composizione fra le due popolazioni.
 ESITO: protocollo definito, implementato e convalidato end to end sulla
 regressione lineare e sulle due baseline, su entrambi i sottoinsiemi in
 perimetro. Nessun modello del confronto è stato addestrato.
+
+## [26-08-2026] — Blocco lineare: infrastruttura di esperimento, metodi di ricampionamento, modelli lineari e selezione delle variabili
+
+### Infrastruttura di esperimento
+
+Il confronto fra modelli richiede che ogni blocco sia valutato sotto la stessa
+procedura. La composizione dei due stadi previsti dal protocollo (ricerca della
+configurazione sulle 5 partizioni del seme 0, rivalutazione della sola
+configurazione selezionata sulle 15 partizioni dei tre semi) è stata quindi
+scritta in un unico punto riusabile, invece di essere ripetuta negli script dei
+singoli blocchi.
+
+Moduli aggiunti: `src/registry.py` (stimatori, griglie e funzioni di lettura dei
+parametri di ciascun modello), `src/search.py` (ricerca su griglia con le tre
+metriche e controllo sui bordi), `src/experiment.py` (motore a due stadi,
+tabella di confronto, percorsi dei coefficienti, controllo diagnostico con
+selezione annidata), `src/selection.py` (motore di stima e tre metodi di
+selezione delle variabili), `src/resampling.py` (procedure di stima dell'errore
+del laboratorio 6). Script: `scripts/run_linear_models.py`,
+`scripts/run_resampling.py`, `scripts/run_selection_check.py`.
+
+Motivo della separazione fra registro e motore: i blocchi successivi aggiungono
+il proprio registro senza toccare il motore, quindi nessun modello può ricevere
+un trattamento diverso dagli altri per effetto di codice duplicato e divergente.
+
+### Best subset selection: motore di stima dedicato
+
+Nella forma del laboratorio 7 la ricerca esaustiva costruisce e valuta una
+pipeline per ciascun sottoinsieme, il che richiede 262.143 stime per fold su
+FD001 e 524.287 su FD003 e non è eseguibile.
+
+Alternative valutate. Ricerca esaustiva limitata a una cardinalità massima di 4:
+scartata perché il limite sarebbe arbitrario e produrrebbe un modello
+confrontato con forward stepwise a parità di nome ma non di spazio di ricerca.
+Ricerca esaustiva su un pool ridotto di variabili, come nel laboratorio, che ne
+usa 8 su 10: scartata perché qui la scelta del pool richiederebbe una
+preselezione supervisionata fuori dal flusso di validazione.
+
+Soluzione adottata: i minimi quadrati su un sottoinsieme si ottengono dalle
+sottomatrici di X'X e X'y, che dipendono dalla partizione e non dal
+sottoinsieme, e l'errore sulla parte di verifica si scrive come forma quadratica
+nei coefficienti senza costruire le predizioni. Il costo per sottoinsieme passa
+dall'ordine del numero di righe a quello del quadrato del numero di variabili
+selezionate. La ricerca esaustiva completa è risultata eseguibile in 11,0 s su
+FD001 e 22,4 s su FD003.
+
+La riformulazione è algebricamente esatta ma è codice del progetto e non di
+libreria, quindi un errore avrebbe prodotto numeri plausibili e sbagliati.
+`scripts/run_selection_check.py` verifica tre proprietà: coincidenza con la
+valutazione ordinaria sotto `src.protocol` su sottoinsiemi casuali, coincidenza
+della ricerca esaustiva veloce con quella ingenua su un pool di 8 variabili,
+impossibilità che una ricerca greedy batta l'esaustiva a parità di cardinalità.
+
+ESITO: tutti i controlli superati. Scarto massimo 7·10⁻¹⁵ su dati generati e
+3,8·10⁻¹¹ sulla matrice di FD001, contro una tolleranza di 10⁻⁸. La crescita di
+tre ordini di grandezza fra dati generati e dati reali è dovuta al
+condizionamento della matrice nel sistema normale e resta cinque ordini di
+grandezza sotto la soglia.
+
+### Selezione delle variabili rispetto ai fold
+
+I tre metodi di selezione scelgono un sottoinsieme guardando un punteggio di
+cross-validation. Due collocazioni possibili: trattare la selezione come un
+iperparametro, cercandola sulle partizioni del seme 0 come per ogni altro
+modello, oppure rifarla dentro ogni fold di rivalutazione.
+
+La seconda produce punteggi privi della distorsione della selezione, ma i 15
+fold selezionano sottoinsiemi diversi e non identificano un modello di cui
+commentare le variabili; inoltre tratterebbe questi tre modelli in modo più
+severo degli altri, il che è una disparità di condizioni nel confronto.
+
+Scelta adottata: la prima, coerente con il protocollo già registrato, con
+l'aggiunta di un controllo diagnostico che misura quanto costa. Il controllo
+rifà la selezione dentro ciascuna delle 15 partizioni, con una
+cross-validation interna sui soli motori di addestramento, e valuta il
+sottoinsieme risultante sulla parte di verifica che non ha partecipato alla
+scelta. Non entra in graduatoria.
+
+### Griglie degli iperparametri
+
+Ridge: `logspace(-2, 8, 41)`. Lasso: `logspace(-4, 4, 50)`, la griglia del
+laboratorio. Elastic Net: la stessa griglia di penalizzazione per nove valori
+del bilanciamento fra le due penalità. Regressione sulle componenti principali:
+griglia completa da una componente al numero di variabili.
+
+L'estensione della griglia di Ridge era motivata dalla diversa
+parametrizzazione delle due penalità in scikit-learn: Ridge minimizza la somma
+dei quadrati dei residui più la penalità, mentre Lasso ed Elastic Net dividono
+la parte di errore per il numero di righe, quindi a parità di valore del
+parametro la contrazione su Ridge è più debole di un fattore pari al numero di
+righe. La previsione operativa che ne era stata tratta si è rivelata errata: le
+configurazioni selezionate sono 1.000 su FD001 e 1.778 su FD003, entrambe
+interne all'intervallo del laboratorio. L'estensione è mantenuta perché il suo
+costo è nullo e perché documenta che la selezione non è vincolata dall'estremo.
+
+Regola sui bordi, fissata prima di eseguire le ricerche e verificata dal codice:
+se la configurazione selezionata cade su un estremo della griglia, la griglia
+viene estesa da quel lato e la ricerca rieseguita, e il fatto viene registrato.
+
+CORREZIONE alla griglia di Elastic Net. Nella convalida della catena su griglie
+ridotte la configurazione selezionata è caduta sul valore minimo del
+bilanciamento, che era 0,1. La griglia è stata estesa verso il basso con i
+valori 0,01 e 0,05 prima di eseguire la versione completa. Il limite inferiore
+del bilanciamento è Ridge, che compare in tabella come modello a sé, quindi
+l'estensione infittisce l'avvicinamento a un modello già presente e non apre
+uno spazio nuovo. Il valore nullo non è incluso perché coinciderebbe con Ridge
+stimato per discesa coordinata anziché in forma chiusa. Dopo l'estensione la
+configurazione selezionata è 0,05 su entrambi i sottoinsiemi, quindi interna
+alla griglia.
+
+Sulla regressione sulle componenti principali la configurazione selezionata su
+FD003 è il numero massimo di componenti. La regola sui bordi non si applica:
+oltre il numero di variabili non esistono componenti, quindi il bordo è il
+limite strutturale della tecnica e non un vincolo di griglia. Con tutte le
+componenti la trasformazione è una rotazione della matrice, e infatti il modello
+coincide numericamente con la regressione lineare multipla (19,934353 in
+entrambi i casi). La coincidenza vale anche come controllo di correttezza
+dell'implementazione.
+
+### Problema tecnico nella tabella di confronto
+
+Sintomo: nella prima esecuzione la colonna che riporta il divario dalla riga
+migliore in unità di dispersione non seguiva l'ordinamento dell'errore, e un
+modello peggiore risultava più vicino di uno migliore. Causa radice: ogni
+divario era diviso per la dispersione della propria riga, quindi un modello più
+stabile risultava più vicino a parità di divario. Soluzione: la scala combina la
+dispersione della riga e quella della riga migliore. La quantità resta una
+scala di lettura e non consente test di significatività, perché i fold
+condividono le righe di addestramento.
+
+### Metodi di ricampionamento del laboratorio 6
+
+Le quattro procedure di stima dell'errore sono state applicate a un unico
+modello, la regressione lineare multipla, ricampionando le unità motore e non
+le righe, per la stessa ragione per cui il partizionamento del protocollo
+avviene per motore. L'esclusione di una osservazione per volta diventa quindi
+esclusione di un motore per volta. Il bootstrap è implementato come funzione di
+ricampionamento scritta da zero, con la firma richiesta dall'esercizio, ed è
+usato in due modi: distribuzione dei coefficienti su 200 ricampionamenti e
+stima dell'errore sui motori mai estratti.
+
+| Procedura | FD001 | FD003 | stime |
+|---|---|---|---|
+| Partizione unica (20 semi) | 20,29 ± 1,50 | 19,56 ± 1,13 | 20 |
+| Un motore per volta | 19,30 ± 6,52 | 19,57 ± 6,33 | 100 |
+| K-Fold a 5 | 20,35 ± 1,18 | 19,93 ± 1,46 | 15 |
+| K-Fold a 10 | 20,19 ± 2,43 | 19,74 ± 2,52 | 30 |
+| Bootstrap sui motori | 20,37 ± 1,05 | 20,00 ± 0,93 | 200 |
+
+Le medie si ordinano secondo la numerosità della parte di addestramento: 99
+motori per l'esclusione di un motore per volta, 90 per il K-Fold a 10, 80 per
+quello a 5, circa 63 motori distinti per il bootstrap. È il compromesso fra
+distorsione e varianza delle procedure di ricampionamento, misurato sui dati
+del progetto. L'unica eccezione è la partizione unica su FD003, che con 70
+motori produce la stima più bassa, ed è coerente con il fatto che sia la
+procedura più rumorosa.
+
+Le dispersioni non misurano la stessa quantità e non sono intercambiabili: per
+la partizione unica descrivono la variabilità fra partizioni, per il K-Fold e
+per l'esclusione di un motore per volta la variabilità fra parti di verifica di
+una stessa procedura, per il bootstrap la variabilità fra campioni. La
+dispersione dell'esclusione di un motore per volta è la più ampia perché ogni
+stima è calcolata su una singola traiettoria: misura quanto i motori
+differiscono fra loro, non l'incertezza della procedura. Per la stessa ragione
+il coefficiente di determinazione calcolato su un solo motore non è
+interpretabile.
+
+Il K-Fold a 10 ha dispersione doppia rispetto a quello a 5 con media quasi
+identica, perché ogni parte di verifica contiene 10 motori invece di 20. È la
+giustificazione empirica del numero di fold fissato nel protocollo.
+
+ESITO: la partizione unica, ripetuta su venti semi, produce su FD001 stime che
+vanno da 17,28 a 23,05 per lo stesso modello sugli stessi dati, con la sola
+differenza di quali motori finiscono da che parte. Il divario che separa tutti i
+modelli del blocco lineare è di 0,03 cicli su FD001 e 0,09 su FD003, due ordini
+di grandezza sotto quella escursione. Valutare con una partizione unica avrebbe
+reso il confronto indistinguibile dal rumore di partizionamento e avrebbe
+consentito di proclamare vincitore qualunque modello scegliendo il seme
+opportuno.
+
+### Confronto del blocco lineare
+
+Otto modelli più le due baseline, sotto il protocollo del progetto: media e
+deviazione standard sulle 15 partizioni.
+
+FD001, 18 variabili
+
+| Modello | Configurazione | RMSE | Divario |
+|---|---|---|---|
+| Ridge | alpha = 1000 | 20,327 ± 1,137 | 0,00 |
+| Elastic Net | alpha = 0,0869, bilanciamento 0,05 | 20,329 ± 1,125 | 0,00 |
+| Best subset | k = 17 | 20,345 ± 1,183 | 0,02 |
+| Forward stepwise | k = 17 | 20,345 ± 1,183 | 0,02 |
+| Backward stepwise | k = 17 | 20,345 ± 1,183 | 0,02 |
+| Lasso | alpha = 0,0281 | 20,345 ± 1,182 | 0,02 |
+| Regressione lineare multipla | nessun iperparametro | 20,345 ± 1,183 | 0,02 |
+| Componenti principali | 6 componenti | 20,353 ± 1,173 | 0,02 |
+| Baseline solo numero di ciclo | | 27,878 ± 2,467 | 3,93 |
+| Baseline costante | | 41,694 ± 0,135 | 26,39 |
+
+FD003, 19 variabili
+
+| Modello | Configurazione | RMSE | Divario |
+|---|---|---|---|
+| Forward stepwise | k = 15 | 19,849 ± 1,449 | 0,00 |
+| Best subset | k = 15 | 19,849 ± 1,449 | 0,00 |
+| Backward stepwise | k = 15 | 19,849 ± 1,449 | 0,00 |
+| Ridge | alpha = 1778 | 19,882 ± 1,449 | 0,02 |
+| Elastic Net | alpha = 0,1265, bilanciamento 0,05 | 19,890 ± 1,454 | 0,03 |
+| Lasso | alpha = 0,1842 | 19,919 ± 1,459 | 0,05 |
+| Componenti principali | 19 componenti | 19,934 ± 1,463 | 0,06 |
+| Regressione lineare multipla | nessun iperparametro | 19,934 ± 1,463 | 0,06 |
+| Baseline solo numero di ciclo | | 35,116 ± 2,645 | 7,16 |
+| Baseline costante | | 40,730 ± 0,651 | 18,59 |
+
+Il divario è espresso in unità di dispersione fra fold. Tutti i modelli del
+blocco cadono entro 0,06 dispersioni su entrambi i sottoinsiemi: sotto questo
+protocollo non sono distinguibili e non vengono ordinati. La graduatoria resta
+aperta. La distanza dalle baseline è invece leggibile, ed è la sola differenza
+di queste tabelle che vada interpretata come reale.
+
+Il pareggio ha una spiegazione strutturale coerente con quanto misurato in
+esplorazione: le righe sono tre ordini di grandezza più numerose delle
+variabili e la correlazione massima fra sensori è 0,963, quindi la stima dei
+minimi quadrati non ha varianza in eccesso da ridurre e ogni forma di
+contrazione può al più pareggiarla. Il limite dei modelli di questo blocco non
+è la varianza della stima ma la forma della relazione fra letture e vita
+residua, che possono descrivere solo come combinazione lineare delle letture al
+ciclo corrente.
+
+### Selezione delle variabili: risultati
+
+I tre metodi selezionano lo stesso identico sottoinsieme su entrambi i
+sottoinsiemi. Su FD001 escludono `setting_1` e tengono le altre 17. Su FD003
+escludono `cycle`, `setting_2`, `sensor_07` e `sensor_12`.
+
+La ricerca esaustiva su 262.143 e 524.287 sottoinsiemi trova quindi esattamente
+ciò che trovano le due ricerche direzionali con 18 e 19 valutazioni, in 11,0 e
+22,4 secondi contro centesimi di secondo. È un risultato negativo sul valore
+della ricerca esaustiva su questi dati: la struttura del problema non presenta
+le interazioni fra variabili che rendono subottimali le ricerche greedy.
+
+Su FD003 la selezione esclude il numero di ciclo e ottiene 19,8486, contro i
+19,85 ± 1,45 già registrati per la regressione lineare senza numero di ciclo
+nella convalida del protocollo. Le due misure, ottenute per vie diverse, si
+confermano a vicenda.
+
+ESITO del controllo con selezione annidata. Su FD001 la selezione rifatta dentro
+ciascun fold produce 20,35 contro i 20,34 riportati, cioè un ottimismo di 0,01
+cicli, con cardinalità selezionate fra 15 e 17. Su FD003 produce 20,12 ± 1,33
+contro i 19,85 riportati, cioè un ottimismo di 0,27 cicli, con cardinalità fra
+13 e 16.
+
+Su FD003 la selezione delle variabili guadagna 0,086 cicli sulla regressione
+lineare multipla, mentre l'ottimismo introdotto dal modo in cui quel guadagno è
+misurato vale 0,27 cicli, tre volte tanto. Il primo posto dei metodi di
+selezione nella tabella di FD003 è quindi un effetto del protocollo e non una
+proprietà dei modelli. La variabilità delle cardinalità selezionate fra fold
+conferma che il minimo della curva è instabile perché la curva è piatta.
+
+### Stabilità dei coefficienti
+
+Il bootstrap sui motori individua come coefficienti di segno non stabile
+`setting_1` e `setting_2` su FD001, e gli stessi due più `sensor_07` su FD003.
+Le variabili escluse dalla selezione esaustiva sono `setting_1` su FD001 e
+`cycle`, `setting_2`, `sensor_07`, `sensor_12` su FD003.
+
+Le due procedure non condividono criterio: una misura la stabilità del segno su
+ricampionamenti dei motori, l'altra minimizza un errore in cross-validation.
+L'indicazione convergente su `setting_1`, `setting_2` e `sensor_07` è quindi
+sostenuta da evidenza indipendente.
+
+### Notebook di analisi
+
+`notebooks/02_modelli_lineari.ipynb` legge gli artefatti prodotti dai due script
+e ne ricava sei figure in `results/figures/` e otto tabelle in
+`results/tables/`. Non addestra modelli e non ricalcola nulla, quindi si esegue
+in pochi secondi.
+
+Il testo interpretativo del notebook spiega come si legge ciascuna figura senza
+incorporare i valori numerici, che stanno nelle tabelle esportate e vengono
+rigenerati a ogni esecuzione. Motivo: un commento con i numeri scritti dentro
+diventerebbe falso a ogni riesecuzione degli esperimenti. Le due affermazioni
+più forti del blocco, la coincidenza dei sottoinsiemi selezionati dai tre metodi
+e la convergenza delle procedure sulle variabili non informative, sono verificate
+da codice invece che asserite nel testo.
+
+### Limiti dichiarati
+
+I punteggi di questo blocco sono ottimisticamente distorti, perché la
+cross-validation non è annidata e la ricerca degli iperparametri usa le stesse
+partizioni su cui la prestazione viene poi misurata. L'entità della distorsione
+è stata quantificata per il caso più esposto, i metodi di selezione delle
+variabili, ed è risultata trascurabile su FD001 e superiore al vantaggio del
+metodo su FD003.
+
+Tutte le misure sono in cross-validation. Nessuna riga dell'insieme di verifica
+ufficiale è stata letta in questo blocco.
+
+Il motore di stima usato dai metodi di selezione è codice del progetto e non di
+libreria. La sua equivalenza con la stima ordinaria è verificata dal codice, ma
+resta un punto in cui il progetto non si appoggia a un'implementazione di
+riferimento.
+
+La sezione sulle procedure di ricampionamento opera su 100 unità e non su
+20.631 righe, quindi le sue stime hanno la variabilità che compete a un
+campione di cento elementi.
