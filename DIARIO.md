@@ -730,3 +730,346 @@ risultato.
 Su FD002 e FD004 le correlazioni sopra soglia sono nulle e sotto soglia raggiungono
 appena 0,10, il che conferma per via indipendente che in quei sottoinsiemi il
 segnale è schiacciato dal regime operativo e non dalla fase di vita.
+
+## [26-08-2026] — Protocollo di valutazione: decisioni, implementazione e convalida
+
+Il protocollo con cui tutti i modelli verranno confrontati è definito e
+implementato prima che venga addestrato un solo modello del confronto. Le
+quattro decisioni che lo compongono sono registrate qui insieme all'esito della
+convalida della catena.
+
+### Ruolo dei file di verifica ufficiali
+
+I file `test_FD00X.txt` e `RUL_FD00X.txt` costituiscono l'insieme di verifica
+finale. Non entrano in nessuna scelta (variabili, iperparametri, graduatoria) e
+vengono letti una sola volta, a graduatoria chiusa, su ciascun modello già
+selezionato e riaddestrato sull'intera parte di addestramento.
+
+Le traiettorie di verifica sono troncate e ogni unità ha una sola etichetta,
+riferita all'ultimo ciclo osservato. Da quella si ricava il target a ogni ciclo
+sommando i cicli che mancano alla fine della traiettoria osservata, quindi la
+parte di verifica è utilizzabile per intero. Sono adottate tre letture: su tutti
+i cicli, sul solo ultimo ciclo di ciascuna unità (forma con cui il dataset è
+riportato in letteratura), e sull'ultimo ciclo contro il target non censurato
+(variante in cui la censura si applica all'addestramento ma non alla verifica).
+Le tre hanno costo nullo l'una rispetto all'altra: sono sottoinsiemi e varianti
+di confronto delle stesse predizioni.
+
+Alternative scartate:
+
+- Non usare i file di verifica e ricavare l'insieme finale dalle sole
+  traiettorie di addestramento. Scarta un insieme indipendente già disponibile e
+  di dimensione pari all'addestramento (100 motori per sottoinsieme), e priva il
+  lavoro dell'unica stima non condizionata dalla selezione.
+- Usare i soli ultimi cicli. Riduce la verifica a 100 punti per sottoinsieme e
+  rinuncia alle restanti 13.000 e 16.500 righe, che sono corredate di target
+  ricostruibile.
+- Unire verifica e addestramento e ripartizionare. Le traiettorie di verifica
+  sono troncate e non consentono di costruire il target per differenza:
+  l'unione richiederebbe due definizioni diverse della stessa variabile dentro
+  lo stesso insieme, e distruggerebbe un insieme di verifica già dato.
+
+### Schema di cross-validation
+
+Cross-validation non annidata, K-Fold con vincolo di gruppo sul motore, 5 fold,
+ripetuta su 3 semi.
+
+Il numero di fold segue dalla numerosità: 100 motori per sottoinsieme, quindi 20
+motori e circa 4.000 righe per parte di verifica. Dieci fold porterebbero la
+verifica a 10 motori, rendendo instabile la stima del singolo fold; il
+leave-one-group-out porterebbe a 100 addestramenti per configurazione, costo non
+sostenibile sui modelli il cui addestramento cresce più che linearmente nel
+numero di righe.
+
+La conduzione è in due stadi. La ricerca su griglia degli iperparametri opera sui
+5 fold del seme 0, un solo passaggio. La configurazione selezionata viene poi
+rivalutata su 5 fold per 3 semi, e i 15 punteggi risultanti producono la media e
+la deviazione standard che entrano nella tabella di confronto. Motivo dello
+sdoppiamento: la ripetizione dentro la ricerca triplicherebbe il costo di ogni
+griglia, che sulle macchine a vettori di supporto (circa 16.500 righe di
+addestramento per fold) è la differenza fra un esperimento eseguibile e uno che
+non lo è.
+
+La cross-validation non è annidata: le stesse partizioni servono a scegliere gli
+iperparametri e a riportare il punteggio della configurazione scelta, come nei
+laboratori del corso. Il punteggio riportato è quindi ottimisticamente distorto.
+La scelta è ammissibile perché esiste un insieme di verifica esterno che non
+partecipa alla selezione: senza di esso la cross-validation annidata sarebbe
+obbligatoria. Alternativa scartata: cross-validation annidata, che moltiplica il
+costo per il numero di fold esterni e produce iperparametri diversi in ciascun
+fold esterno, il che rende impossibile identificare un modello selezionato di cui
+leggere coefficienti e importanze, cioè il materiale con cui si costruisce il
+commento di ciascun modello.
+
+La deviazione standard riportata è calcolata sui fold e non è l'errore standard
+della media: i fold condividono le righe di addestramento e non sono
+indipendenti. È una misura di dispersione e come tale va letta. Due modelli il
+cui divario è inferiore alla dispersione fra fold si considerano non
+distinguibili sotto questo protocollo e non vengono ordinati.
+
+Lo schema con vincolo di gruppo non compare nei laboratori del corso: è la
+trasposizione diretta del K-Fold a dati raggruppati, resa obbligatoria dalla
+struttura del dataset.
+
+### Metrica di riferimento
+
+La metrica su cui si selezionano gli iperparametri e si ordina la graduatoria è
+la radice dell'errore quadratico medio. Motivo: è nelle unità del target
+(cicli), quindi interpretabile e commentabile; è coerente con la perdita
+minimizzata dalla maggior parte dei modelli in confronto, quindi non introduce
+disallineamento fra ciò che i modelli ottimizzano e ciò su cui vengono giudicati.
+
+A corredo sono riportati, e mai usati per selezionare, l'errore assoluto medio e
+il coefficiente di determinazione. Il rapporto fra le prime due dice se l'errore
+è dominato da una coda di errori grandi o è diffuso, il che su questo dataset è
+informativo perché la censura crea una fase a target costante e una fase finale
+di degrado con profili di errore diversi. Il terzo è adimensionale e serve a
+confrontare sottoinsiemi con varianza del target diversa. L'errore quadratico
+medio non è riportato separatamente perché è il quadrato della metrica di
+riferimento.
+
+Le metriche sono calcolate per fold e poi mediate, non aggregando in un unico
+vettore le predizioni di tutti i fold: l'aggregazione produrrebbe un numero solo
+e perderebbe la dispersione, che è parte del risultato.
+
+Alternativa scartata: la funzione di punteggio asimmetrica adottata in
+letteratura su C-MAPSS, che penalizza più severamente le predizioni tardive.
+Scartata perché fuori dal materiale del corso e perché l'asimmetria è
+un'assunzione di dominio sulla gravità relativa dei due tipi di errore, che il
+lavoro non è in grado di giustificare.
+
+### Rappresentazione delle osservazioni
+
+Una riga per ciclo, letture grezze dei sensori, nessuna aggregazione su finestre
+temporali.
+
+Alternativa scartata: aggiunta di aggregazioni su finestra mobile (medie e
+deviazioni standard degli ultimi cicli, scostamenti, pendenze locali). È
+l'intervento che su questi dati produce il guadagno maggiore, perché attenua il
+rumore di misura e rende visibile la deriva. È però ingegnerizzazione di
+variabili su serie temporali, fuori dal materiale del corso; introduce
+l'ampiezza della finestra come iperparametro aggiuntivo da selezionare in
+validazione, moltiplicando il costo di ogni griglia; e richiede che la finestra
+sia strettamente causale, con un rischio concreto di fuga di informazione nei
+primi cicli di ogni traiettoria. Soprattutto sposterebbe il baricentro del lavoro
+dalla comparazione fra modelli alla progettazione delle variabili.
+
+Alternativa scartata: una riga per finestra con le sole aggregazioni. Cambia
+l'unità di osservazione e rende non confrontabile la lettura sull'ultimo ciclo
+delle traiettorie di verifica.
+
+Il numero di ciclo è incluso fra le variabili esplicative. Non è una fuga di
+informazione: il numero di cicli percorsi è noto al momento della predizione
+anche su una traiettoria troncata. Va però tenuto presente che sulle traiettorie
+complete la vita utile residua è per costruzione la differenza fra durata e ciclo
+corrente, mentre su quelle troncate il punto di interruzione è casuale: la
+relazione non si trasferisce integralmente dall'addestramento alla verifica.
+
+Per rendere misurabile questa componente la tabella dei risultati è preceduta da
+due baseline: la predizione costante pari alla media del target di addestramento,
+che è il pavimento assoluto, e la regressione sul solo numero di ciclo, che è il
+pavimento informativo. Il guadagno di ciascun modello si legge rispetto alla
+seconda.
+
+Le colonne costanti sono rimosse, con criterio basato sul numero di valori
+distinti e applicato alle sole traiettorie di addestramento del sottoinsieme. Il
+criterio è identico sui due sottoinsiemi e produce liste diverse: `sensor_10` è
+costante su FD001 e assume quattro valori su FD003, quindi viene rimosso solo dal
+primo. La costanza è una proprietà strutturale del sensore in quel regime
+operativo e non dipende dal target: determinarla sull'intera parte di
+addestramento non introduce informazione proveniente dalle partizioni di
+verifica. `setting_1` e `setting_2` sono mantenute: non sono costanti, e il loro
+contributo nullo è materiale per il commento dei modelli con selezione delle
+variabili.
+
+La standardizzazione è applicata dentro la pipeline a tutti i modelli, anche a
+quelli per cui è irrilevante. Un pre-processing differenziato per famiglia
+introdurrebbe una differenza di condizioni fra modelli confrontati, che è
+esattamente ciò che il protocollo deve escludere.
+
+Matrice risultante: 18 variabili su FD001, 19 su FD003.
+
+### Implementazione
+
+`src/protocol.py` contiene lo schema di partizionamento, il numero di fold, i
+semi, le metriche e le funzioni di valutazione. È l'unico punto in cui queste
+quantità sono scritte, e ogni esperimento vi passa attraverso: è così che il
+confronto a parità di condizioni è garantito dal codice e non dalla disciplina di
+chi lo usa. Le funzioni accettano qualunque oggetto con `fit` e `predict`, quindi
+nessun modello può ricevere un trattamento diverso dagli altri.
+
+`src/pipeline.py` compone selezione delle colonne, standardizzazione e modello.
+`src/design.py` costruisce la matrice di progetto e le tre letture della parte di
+verifica. `src/baselines.py` fornisce le due baseline.
+`scripts/run_protocol_check.py` esercita la catena.
+
+Lo stimatore viene clonato prima di ogni addestramento. Senza clonazione un
+oggetto già adattato e riaddestrato su un altro fold può conservare stato, il che
+non fa fallire nulla e produce numeri leggermente sbagliati.
+
+### Controlli di correttezza superati
+
+Quattro controlli che potevano fallire.
+
+Coerenza fra target e metrica: la radice dell'errore quadratico medio della
+predizione costante vale 41,694 su FD001 contro una deviazione standard del
+target di 41,674, e 40,730 su FD003 contro 40,627. Lo scarto residuo è dovuto al
+fatto che la costante è la media dei motori di addestramento del fold e non
+quella del fold di verifica, ed è anche la ragione del coefficiente di
+determinazione lievemente negativo.
+
+Assenza di sovrapposizione: nelle 15 partizioni di ciascun sottoinsieme nessun
+motore compare contemporaneamente in addestramento e in verifica.
+
+Integrità del target di verifica: il target ricostruito dalle etichette coincide,
+sull'ultimo ciclo di ogni unità, con l'etichetta stessa censurata alla soglia. Il
+controllo è dentro la costruzione della matrice e fa fallire il caricamento. È il
+controllo più importante della catena: un disallineamento posizionale fra
+etichette e unità, o una costruzione del target di verifica per differenza
+anziché dalle etichette, produrrebbe un target quasi costante e facile da
+predire, cioè un risultato migliore del vero senza che nulla lo segnali.
+
+Coerenza con l'esplorazione: la baseline sul solo numero di ciclo ottiene un
+coefficiente di determinazione di 0,549 su FD001 e 0,244 su FD003. Il divario è
+la conseguenza diretta della dispersione delle durate misurata in fase di
+esplorazione (46,3 contro 86,5): un conteggio dei cicli è tanto meno informativo
+quanto più le durate variano. Due misure indipendenti che si spiegano a vicenda.
+
+### Effetto del vincolo di gruppo
+
+Confronto diagnostico a parità di modello, numero di fold e seme, con l'unica
+differenza del vincolo di gruppo. I due modelli impiegati non sono ottimizzati e
+non appartengono al confronto.
+
+| Sottoinsieme | Modello | Per riga | Per unità | Ottimismo | Relativo |
+|---|---|---|---|---|---|
+| FD001 | Regressione lineare | 19,98 | 20,33 | 0,35 | 1,7 % |
+| FD001 | Foresta casuale | 15,89 | 16,73 | 0,85 | 5,1 % |
+| FD003 | Regressione lineare | 19,27 | 20,05 | 0,79 | 3,9 % |
+| FD003 | Foresta casuale | 13,10 | 15,26 | 2,17 | 14,2 % |
+
+L'effetto è reale e sistematico, e cresce con la capacità del modello di
+memorizzare le righe vicine e con la lunghezza delle traiettorie: FD003 ha
+traiettorie più lunghe, quindi più cicli quasi identici per motore, e vi si
+osserva l'ottimismo maggiore.
+
+L'effetto è però più contenuto di quanto la motivazione qualitativa lasciasse
+prevedere. Su FD001 un partizionamento per riga sottostimerebbe l'errore di poco
+più del 5 per cento anche su un modello a capacità alta. Due cautele nella
+lettura: i modelli diagnostici non sono ottimizzati, e sotto partizione per riga
+anche la selezione degli iperparametri deriverebbe, aggiungendo un ottimismo che
+questa misura non cattura. La tabella mostra che il vincolo di gruppo sposta i
+margini del confronto, non che senza di esso i risultati sarebbero privi di
+significato.
+
+### Convalida sulla regressione lineare
+
+Cross-validation per unità motore, 5 fold per 3 semi, media e deviazione standard
+sui 15 addestramenti.
+
+| Sottoinsieme | Modello | RMSE | MAE | R² |
+|---|---|---|---|---|
+| FD001 | Predizione costante | 41,69 ± 0,14 | 36,98 ± 0,12 | -0,002 ± 0,003 |
+| FD001 | Solo numero di ciclo | 27,88 ± 2,47 | 21,49 ± 1,71 | 0,549 ± 0,080 |
+| FD001 | Regressione lineare | 20,35 ± 1,18 | 16,50 ± 1,03 | 0,761 ± 0,028 |
+| FD001 | Regressione lineare senza numero di ciclo | 21,68 ± 1,30 | 17,75 ± 1,06 | 0,728 ± 0,032 |
+| FD003 | Predizione costante | 40,73 ± 0,65 | 35,55 ± 0,14 | -0,007 ± 0,008 |
+| FD003 | Solo numero di ciclo | 35,12 ± 2,64 | 27,53 ± 2,12 | 0,244 ± 0,147 |
+| FD003 | Regressione lineare | 19,93 ± 1,46 | 15,62 ± 1,29 | 0,757 ± 0,037 |
+| FD003 | Regressione lineare senza numero di ciclo | 19,85 ± 1,45 | 15,50 ± 1,26 | 0,760 ± 0,033 |
+
+Insieme di verifica ufficiale, riaddestramento sui 100 motori e lettura unica.
+
+| Sottoinsieme | Modello | RMSE tutti i cicli | R² tutti i cicli | RMSE ultimo ciclo | R² ultimo ciclo |
+|---|---|---|---|---|---|
+| FD001 | Predizione costante | 35,34 | -0,642 | 41,94 | -0,095 |
+| FD001 | Solo numero di ciclo | 23,69 | 0,262 | 32,25 | 0,352 |
+| FD001 | Regressione lineare | 19,07 | 0,522 | 21,45 | 0,714 |
+| FD001 | Regressione lineare senza numero di ciclo | 20,75 | 0,434 | 20,83 | 0,730 |
+| FD003 | Predizione costante | 31,37 | -0,596 | 43,70 | -0,245 |
+| FD003 | Solo numero di ciclo | 26,03 | -0,099 | 36,80 | 0,117 |
+| FD003 | Regressione lineare | 17,96 | 0,477 | 21,44 | 0,700 |
+| FD003 | Regressione lineare senza numero di ciclo | 17,96 | 0,477 | 21,16 | 0,708 |
+
+Le letture contro target non censurato differiscono da quelle censurate di circa
+un ciclo sulla radice dell'errore quadratico medio, quantità coerente con il
+numero ridotto di unità di verifica la cui vita residua supera la soglia.
+
+### Incomparabilità fra le letture
+
+L'errore assoluto sull'insieme di verifica risulta inferiore a quello in
+cross-validation (19,07 contro 20,35 su FD001, 17,96 contro 19,93 su FD003). Non
+è una fuga di informazione: è un effetto della composizione delle due
+popolazioni. Le traiettorie di verifica sono troncate in un punto casuale prima
+del guasto e contengono quindi in proporzione molte più righe della fase iniziale
+di vita, dove il target è appiattito sulla soglia. La quota di righe al valore di
+soglia passa dal 39,4 al 61,4 per cento su FD001 e dal 49,4 al 69,1 per cento su
+FD003, e la deviazione standard del target scende da 41,67 a 27,58 e da 40,63 a
+24,84. Il target da predire varia meno, e l'errore assoluto cala per costruzione.
+
+Il coefficiente di determinazione si muove nella direzione opposta, da 0,761 a
+0,522 e da 0,757 a 0,477: rispetto alla variabilità disponibile la prestazione
+sulla verifica è peggiore, che è la direzione attesa.
+
+Anche il coefficiente di determinazione, però, non è confrontabile fra le due
+letture, perché ha denominatori diversi. Lo stesso vale fra le due letture della
+verifica: sull'ultimo ciclo il target è meno censurato e più disperso, e il
+coefficiente sale a 0,714 e 0,700 pur essendo la radice dell'errore quadratico
+medio più alta che su tutti i cicli.
+
+Ne consegue una regola di lettura che vale per l'intera tabella dei risultati:
+cross-validation, verifica su tutti i cicli e verifica sull'ultimo ciclo sono tre
+letture su popolazioni diverse, e i loro valori non si sottraggono fra loro. Ciò
+che si confronta legittimamente è la graduatoria dei modelli dentro ciascuna
+lettura, e la funzione dell'insieme di verifica è mostrare se quella graduatoria
+si conservi su una popolazione indipendente.
+
+### Contributo del numero di ciclo
+
+L'aspettativa era che il numero di ciclo apportasse una quota rilevante della
+capacità predittiva, tale da appiattire il confronto fra modelli. La misura la
+ridimensiona.
+
+In cross-validation la sua rimozione peggiora la radice dell'errore quadratico
+medio di 1,33 cicli su FD001, quantità confrontabile con la dispersione fra fold
+(1,18 e 1,30), e la migliora di 0,09 cicli su FD003, cioè non produce alcun
+effetto. Sull'ultimo ciclo dell'insieme di verifica la rimozione migliora il
+risultato su entrambi i sottoinsiemi (20,83 contro 21,45 su FD001, 21,16 contro
+21,44 su FD003).
+
+La lettura è coerente con la struttura del dato: sulle traiettorie complete il
+numero di ciclo è legato al target da una relazione esatta, su quelle troncate
+no, perché il punto di interruzione è casuale. Sulle traiettorie di verifica
+lette per intero la variabile aiuta comunque, perché i cicli iniziali
+corrispondono a vite residue alte e quindi censurate; sull'ultimo ciclo, dove il
+troncamento agisce, è lievemente fuorviante.
+
+La decisione di includerlo resta invariata: il numero di cicli percorsi è
+informazione realmente disponibile al momento della predizione, ed escluderla
+perché su una delle letture peggiora leggermente il risultato sarebbe una scelta
+fatta guardando l'esito. La baseline sul solo numero di ciclo resta in tabella
+come termine di lettura.
+
+### Limiti dichiarati
+
+Il punteggio riportato in cross-validation è ottimisticamente distorto, perché le
+stesse partizioni servono a selezionare gli iperparametri e a riportarne
+l'esito. Il divario con la lettura sull'insieme di verifica non ne è una misura
+diretta, per l'incomparabilità delle popolazioni descritta sopra.
+
+La dispersione fra fold non è un errore standard e non consente test di
+significatività: i fold condividono le righe di addestramento.
+
+La rappresentazione a letture grezze non sfrutta la struttura temporale delle
+traiettorie, e i valori assoluti delle metriche restano perciò distanti da quelli
+ottenibili con variabili aggregate su finestra.
+
+La predizione costante ottiene un coefficiente di determinazione marcatamente
+negativo sull'insieme di verifica (-0,642 e -0,596 su tutti i cicli) perché la
+media del target di addestramento (86,8 e 93,1) è distante da quella della
+verifica (108,9 e 112,3). È un'ulteriore manifestazione della differenza di
+composizione fra le due popolazioni.
+
+ESITO: protocollo definito, implementato e convalidato end to end sulla
+regressione lineare e sulle due baseline, su entrambi i sottoinsiemi in
+perimetro. Nessun modello del confronto è stato addestrato.

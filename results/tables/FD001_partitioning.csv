@@ -1,0 +1,5 @@
+model,scheme,rmse_mean,rmse_std
+regressione_lineare,per_unita,20.33218193335054,0.6853658979404417
+regressione_lineare,per_riga,19.98462938233338,0.22711386998191574
+foresta_casuale,per_unita,16.733197554150287,1.5000005150379534
+foresta_casuale,per_riga,15.887285916691955,0.14772999376136106
