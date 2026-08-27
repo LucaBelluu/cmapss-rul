@@ -30,6 +30,12 @@ I due stadi
     condizionata dalla selezione proviene dall'insieme di verifica ufficiale,
     che non viene letto qui.
 
+Baseline
+    Le due baseline sono costruite qui e non nei singoli script, per la stessa
+    ragione per cui i due stadi sono scritti in un punto solo: ogni blocco del
+    confronto ne ha bisogno per rendere leggibile la propria tabella, e due
+    definizioni separate potrebbero divergere senza che nulla lo segnali.
+
 Selezione delle variabili
     I tre metodi di selezione sono trattati come gli altri modelli: la ricerca
     del sottoinsieme avviene sulle partizioni del seme di ricerca, il
@@ -93,6 +99,50 @@ def _config_label(config: dict) -> str:
     return ", ".join(parts)
 
 
+def baseline_runs(design, comparison_splits) -> list[ModelRun]:
+    """Le due baseline, valutate sulle stesse partizioni degli altri modelli.
+
+    Sono ricalcolate a ogni blocco e non riprese dagli artefatti di un altro:
+    la tabella di ciascun blocco e' cosi' prodotta interamente da una sola
+    esecuzione, e non dalla composizione di esecuzioni diverse. Il costo e'
+    trascurabile e il guadagno e' che ogni tabella si legge da sola.
+
+    La predizione costante e' il pavimento assoluto, la regressione sul solo
+    numero di ciclo e' il pavimento informativo: il guadagno di un modello si
+    legge rispetto alla seconda.
+    """
+    from src.baselines import all_baselines
+
+    runs = []
+    labels = {
+        "baseline_costante": "Predizione costante",
+        "baseline_solo_ciclo": "Regressione sul solo numero di ciclo",
+    }
+    for key, model in all_baselines().items():
+        fold_metrics = evaluate(
+            model, design.X_train, design.y_train, design.groups_train, comparison_splits
+        )
+        fold_metrics.insert(0, "model", key)
+        summary = summarize(fold_metrics, label=key)
+        summary["label"] = labels[key]
+        summary["subset"] = design.subset
+        summary["config"] = "baseline"
+        summary["search_seconds"] = 0.0
+        summary["n_configurations"] = 1
+        summary["n_nonzero"] = 0 if key == "baseline_costante" else 1
+        runs.append(
+            ModelRun(
+                key=key,
+                label=labels[key],
+                subset=design.subset,
+                estimator=model,
+                fold_metrics=fold_metrics,
+                summary=summary,
+            )
+        )
+    return runs
+
+
 def run_grid_model(
     spec: ModelSpec,
     design,
@@ -143,6 +193,7 @@ def run_grid_model(
                 "n_configurations": len(search.table),
                 "boundary": ", ".join(search.boundary),
                 "convergence_warnings": search.convergence_warnings,
+                "failed_configurations": search.failed_configurations,
                 "search_best_rmse": search.best_score,
             }
         )

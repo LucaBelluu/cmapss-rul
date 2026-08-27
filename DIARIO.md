@@ -1380,3 +1380,242 @@ riferimento.
 La sezione sulle procedure di ricampionamento opera su 100 unità e non su
 20.631 righe, quindi le sue stime hanno la variabilità che compete a un
 campione di cento elementi.
+
+## [27-08-2026] — Sequenza dei blocchi residui del confronto
+
+Il perimetro delle tecniche di regressione rimaste fuori dal blocco lineare è stato
+ricostruito dal materiale dei laboratori e tradotto in tre blocchi sperimentali più uno
+di chiusura.
+
+- Blocco 2, superamento della linearità (laboratorio 8): regressione polinomiale, step
+  functions, regression spline, modello additivo generalizzato.
+- Blocco 3, famiglia ad albero (laboratori 9 e 10): albero potato per cost-complexity,
+  bagging, foresta casuale, AdaBoost, gradient boosting, XGBoost.
+- Blocco 4, kernel e reti (laboratorio 11): macchine a vettori di supporto con kernel
+  lineare, radiale e polinomiale, percettrone multistrato.
+- Blocco 5, chiusura: graduatoria complessiva, lettura unica dell'insieme di verifica
+  ufficiale, controllo di sensibilità sulla soglia di censura, report e README.
+
+Motivo dell'unione dei laboratori 9 e 10 in un blocco solo: la lettura centrale di quella
+famiglia è albero singolo contro bagging contro foresta casuale contro boosting, cioè
+riduzione della varianza per aggregazione contro riduzione della distorsione per
+addizione. Distribuirla su due blocchi la trasformerebbe in un rimando fra artefatti
+invece che in un confronto dentro una tabella sola.
+
+Alternativa scartata: anticipare il blocco 4 per misurare presto il costo delle macchine a
+vettori di supporto, che è il rischio maggiore del piano. Scartata perché per conoscere
+quel costo basta misurarlo, non serve riordinare i blocchi, e l'ordine scelto segue la
+progressione del programma del corso.
+
+I metodi non supervisionati del laboratorio 12 sono collocati nel blocco di chiusura in
+forma circoscritta: raggruppamento delle cento traiettorie di ciascun sottoinsieme,
+descritte da poche statistiche per motore, con K-Means e clustering gerarchico, per
+verificare se i due modi di guasto di FD003 siano separabili e se l'errore dei modelli si
+concentri su un gruppo. Motivo: non sono tecniche di regressione e la consegna non le
+richiede, quindi entrano soltanto dove servono al commento.
+
+Il controllo di sensibilità sulla soglia di censura resta collocato nel blocco di
+chiusura, dove il modello migliore su cui eseguirlo esiste.
+
+## [27-08-2026] — CORREZIONE: le step functions corrispondono a una classe di libreria
+
+La voce del 20-08-2026 registra che le step functions non corrispondono a una classe di
+scikit-learn e vanno costruite come variabili indicatrici su intervalli. L'affermazione è
+sbagliata: `KBinsDiscretizer` con codifica a indicatrici dense costruisce esattamente le
+colonne che il laboratorio ottiene a mano con `np.digitize`, e in più adatta i punti di
+taglio dentro la pipeline, quindi sulla sola parte di addestramento di ciascun fold.
+
+Il modello del blocco 2 usa la classe di libreria. La costruzione a mano avrebbe
+duplicato codice già disponibile e testato, senza aggiungere controllo su nulla.
+
+## [27-08-2026] — Blocco del superamento della linearità: griglie, esecuzione e risultati
+
+### Impostazione del blocco
+
+Le quattro tecniche del laboratorio 8 sono applicate a tutte le variabili e non a una per
+volta come nella parte didattica del materiale. Motivo: un modello costruito su una sola
+variabile non sarebbe confrontabile con quelli degli altri blocchi, che usano l'intera
+matrice, e non risponderebbe alla consegna.
+
+Ogni modello è una pipeline in cui la trasformazione precede una regressione lineare,
+quindi la trasformazione è adattata dentro ciascun fold come la standardizzazione.
+
+La regressione polinomiale usa l'espansione con interazioni, che è la forma predefinita
+dello strumento del laboratorio. Motivo: è l'unico modello del blocco non additivo, e
+senza le interazioni il blocco non conterrebbe alcun modello capace di rappresentare
+l'effetto congiunto di due variabili. Il grado 1 resta in griglia perché è il caso in cui
+l'espansione non aggiunge nulla e il modello coincide con la regressione lineare
+multipla.
+
+La collocazione dei punti di taglio delle step functions e dei nodi delle spline
+(intervalli di ampiezza uguale, come nel laboratorio, oppure tagli sui quantili) è un
+iperparametro invece che una scelta fissata a priori. Motivo: il costo aggiuntivo è di
+pochi secondi e la scelta diventa misurata invece che asserita. Il controllo sui bordi non
+si applica a un parametro con due soli valori, ed è corretto che non si applichi, perché
+su un parametro non ordinato la posizione estrema non ha significato.
+
+### Adattatore per il modello additivo
+
+Sintomo: `pygam.LinearGAM` supera la clonazione ma fa fallire con `AttributeError`
+l'adattamento di qualunque `Pipeline` che lo contenga.
+
+Causa: la classe non implementa `__sklearn_tags__`, che scikit-learn richiede dalla
+versione 1.6 agli stimatori usati in composizione.
+
+Soluzione: `src/nonlinear.py` contiene `GamRegressor`, adattatore che eredita da
+`BaseEstimator`, espone gli iperparametri come argomenti del costruttore e costruisce i
+termini dentro `fit`, quando il numero di colonne è noto. Questo lo rende anche
+indipendente dal sottoinsieme, che ha 18 variabili su FD001 e 19 su FD003. Verificati
+adattamento, predizione, clonazione, ricerca su griglia e lettura delle funzioni parziali.
+
+### Griglie e costi, fissati prima dell'esecuzione
+
+| Modello | Griglia | Configurazioni | Costo per addestramento |
+|---|---|---|---|
+| Polinomiale | grado in {1, 2, 3} | 3 | da 0,3 a 3,5 s |
+| Step functions | intervalli in {3, 5, 8, 12, 20, 30}, tagli in {uguali, quantili} | 12 | da 0,1 a 0,3 s |
+| Spline | nodi in {3, 5, 8, 12, 20}, grado in {1, 2, 3}, tagli in {uguali, quantili} | 30 | da 0,2 a 0,4 s |
+| Additivo | penalizzazione su 9 valori da 1e-3 a 1e5, funzioni di base in {5, 10, 20} | 27 | da 0,8 a 2,8 s |
+
+I costi sono misurati prima di fissare le griglie su matrici della forma di quelle del
+progetto. Il grado 4 del polinomio non è in griglia: genera 7.314 colonne, richiede circa
+140 secondi per addestramento e 772 MB per la sola matrice espansa, e vi entrerebbe solo
+se la regola sui bordi lo imponesse.
+
+### Applicazione della regola sui bordi
+
+La prima esecuzione ha selezionato configurazioni estreme in quattro punti: numero di
+funzioni di base del modello additivo al massimo su entrambi i sottoinsiemi, numero di
+intervalli delle step functions al massimo su FD003, grado della spline al minimo su
+FD003. Le griglie sono state estese a intervalli fino a 80, funzioni di base fino a 40 e
+grado fino a 0, su entrambi i sottoinsiemi e non sul solo sottoinsieme in cui il bordo era
+stato toccato. Motivo: griglie diverse sui due sottoinsiemi renderebbero le due repliche
+del confronto non più condotte sotto lo stesso protocollo.
+
+Le prime due estensioni hanno risolto il bordo: le configurazioni selezionate sono rimaste
+rispettivamente a 30 intervalli e a 20 funzioni di base, ora interne.
+
+### Problema tecnico: configurazioni scomparse senza traccia
+
+Sintomo: la seconda esecuzione ha prodotto centinaia di eccezioni `ValueError` dentro la
+trasformazione spline, e ciononostante ha riportato un vincitore regolare e nessun avviso
+sui bordi.
+
+Causa immediata: la base spline di grado 0 con estrapolazione costante fallisce su
+qualunque valore fuori dall'intervallo osservato in addestramento, condizione che si
+verifica in ogni fold. Il difetto è circoscritto a quella combinazione: sono state provate
+tutte e dodici le combinazioni di grado (0, 1, 2, 3) ed estrapolazione (costante,
+prosecuzione, lineare) e le altre undici funzionano.
+
+Causa radice: quando una configurazione solleva un'eccezione, la ricerca su griglia di
+scikit-learn le assegna punteggio non definito e prosegue. La configurazione sparisce
+dalla graduatoria senza lasciare traccia, e nulla distingue una griglia valutata per
+intero da una in cui una parte non è mai stata provata. La conseguenza sul protocollo è
+diretta: il controllo sui bordi diventa privo di significato se la zona verso cui la
+griglia è stata estesa è proprio quella che non viene valutata.
+
+Soluzione, su due piani. `src/search.py` conta le configurazioni con punteggio non
+definito e le riporta negli artefatti insieme alle mancate convergenze; il contatore è
+verificato con uno stimatore che fallisce di proposito su un valore della griglia.
+L'errore non viene fatto sollevare, perché una singola configurazione difettosa
+interromperebbe un esperimento intero mentre così l'esecuzione resta utilizzabile e il
+fatto resta registrato.
+
+L'estensione della griglia del grado è stata ritirata, per due ragioni indipendenti. Il
+grado 0 produce funzioni indicatrici su intervalli di ampiezza uguale, che sono le step
+functions già presenti in tabella come modello a sé: il limite inferiore porta a un
+modello noto e non a uno spazio nuovo, come accade a Elastic Net verso il lato di Ridge.
+E quella configurazione non è valutabile. L'estremo selezionato sul grado minimo della
+spline su FD003 resta quindi come limite dichiarato.
+
+Alternativa scartata: cambiare l'estrapolazione per rendere valutabile il grado 0.
+Cambiarla per la sola configurazione difettosa introdurrebbe una differenza di trattamento
+dentro la griglia di uno stesso modello; cambiarla per tutte significherebbe modificare il
+modello dopo averne visto il risultato, e l'estrapolazione che prosegue l'andamento
+polinomiale produce fuori intervallo valori di base di ampiezza crescente, quindi
+predizioni instabili proprio sulle unità che il modello non ha visto.
+
+### Avviso sugli intervalli degeneri
+
+Sintomo: la discretizzazione emette un avviso, una volta per configurazione e per fold,
+quando su una variabile a pochi valori distinti alcuni intervalli risultano di ampiezza
+nulla e vengono rimossi. Il registro dell'esecuzione ne risultava illeggibile.
+
+L'esito della trasformazione è corretto: la variabile riceve meno colonne, le altre non
+sono toccate. L'avviso è filtrato dentro `fit` di una sottoclasse del discretizzatore,
+agganciato al testo del messaggio così che un messaggio diverso torni a comparire. In
+cambio, lo script registra quante colonne l'espansione ha effettivamente generato contro
+quante ne produrrebbe se ogni variabile ricevesse tutti gli intervalli: su FD003 la
+configurazione selezionata genera 475 colonne su 570 nominali, su FD001 ne genera 360 su
+360. Il fenomeno riguarda solo i tagli sui quantili, perché gli intervalli di ampiezza
+uguale hanno larghezza positiva per costruzione, e rende visibile una proprietà del dato
+che i modelli lineari non mostravano: alcune letture di sensori sono quantizzate dallo
+strumento di misura.
+
+### Costruzione delle baseline spostata nel motore
+
+La costruzione delle due baseline era dentro lo script del blocco lineare. Ogni blocco del
+confronto ne ha bisogno per rendere leggibile la propria tabella, quindi è stata spostata
+in `src.experiment` e lo script del blocco lineare la importa invece di ridefinirla. Il
+comportamento è identico e le baseline riproducono al centesimo i valori già registrati,
+il che verifica anche che matrice di progetto e partizioni siano rimaste quelle di agosto.
+
+### Risultati
+
+FD001, media e dispersione su 15 partizioni.
+
+| Modello | Configurazione | Termini | RMSE | MAE | R quadro |
+|---|---|---|---|---|---|
+| Modello additivo | penalizzazione 100, 20 funzioni di base | 18 | 17,46 ± 1,21 | 13,00 ± 0,91 | 0,823 |
+| Regression spline | grado 2, tagli uguali, 5 nodi | 88 | 17,47 ± 1,19 | 13,05 ± 0,90 | 0,823 |
+| Step functions | 20 intervalli, tagli uguali | 324 | 17,69 ± 1,20 | 13,19 ± 0,89 | 0,819 |
+| Regressione polinomiale | grado 2 | 189 | 17,75 ± 1,28 | 13,81 ± 1,02 | 0,817 |
+| Solo numero di ciclo | baseline | 1 | 27,88 ± 2,47 | 21,49 ± 1,71 | 0,549 |
+| Predizione costante | baseline | 0 | 41,69 ± 0,14 | 36,98 ± 0,12 | -0,002 |
+
+FD003, media e dispersione su 15 partizioni.
+
+| Modello | Configurazione | Termini | RMSE | MAE | R quadro |
+|---|---|---|---|---|---|
+| Regression spline | grado 1, tagli uguali, 12 nodi | 203 | 15,91 ± 1,10 | 12,05 ± 0,73 | 0,846 |
+| Modello additivo | penalizzazione 10, 20 funzioni di base | 19 | 15,95 ± 1,09 | 12,06 ± 0,74 | 0,845 |
+| Step functions | 30 intervalli, tagli sui quantili | 475 | 16,10 ± 1,08 | 12,20 ± 0,77 | 0,842 |
+| Regressione polinomiale | grado 2 | 209 | 16,44 ± 1,02 | 12,51 ± 0,84 | 0,835 |
+| Solo numero di ciclo | baseline | 1 | 35,12 ± 2,64 | 27,53 ± 2,12 | 0,244 |
+| Predizione costante | baseline | 0 | 40,73 ± 0,65 | 35,55 ± 0,14 | -0,007 |
+
+ESITO: il blocco supera il blocco lineare su entrambi i sottoinsiemi. Il miglior modello
+lineare valeva 20,33 ± 1,14 su FD001 e 19,85 ± 1,45 su FD003; il migliore di questo blocco
+guadagna 2,87 cicli su FD001 e 3,94 su FD003, cioè 2,4 e 3,1 dispersioni. È il primo
+divario del progetto che superi la soglia di leggibilità fissata dal protocollo, e
+conferma l'ipotesi con cui il blocco lineare si era chiuso: il limite stava nella forma
+della relazione fra letture dei sensori e vita residua, non nella varianza della stima.
+
+Il guadagno viene dall'additività non lineare e non dalle interazioni. I tre modelli
+additivi stanno davanti alla regressione polinomiale su entrambi i sottoinsiemi, e il
+polinomio è l'unico che rappresenta le interazioni.
+
+Il numero di termini non è correlato all'errore: il modello con 18 termini e quello con
+475 stanno a una frazione di dispersione l'uno dall'altro. Le curve di validazione
+scendono rapidamente e poi restano piatte su un tratto lungo.
+
+Cautele di lettura. I primi due modelli distano 0,00 e 0,03 dispersioni e non vengono
+ordinati; che a pareggiare siano spline e modello additivo è coerente con il fatto che
+rappresentano la stessa cosa, una funzione liscia per variabile, e differiscono solo per
+come ne governano la flessibilità. La configurazione selezionata da ciascuna griglia cade
+su un tratto piatto e non va commentata come un ottimo individuato con precisione. I
+punteggi restano ottimistici perché la cross-validation non è annidata, e la distorsione
+cresce con il numero di configurazioni esplorate, che in questo blocco varia da 3 a 45 fra
+i modelli: il confronto fra le righe non è a parità di questo fattore. Il modello additivo
+è l'unico del confronto stimato da una libreria diversa da scikit-learn, attraverso un
+adattatore scritto per il progetto.
+
+Nessuna riga dell'insieme di verifica ufficiale è stata letta.
+
+### Artefatti
+
+`experiments/nonlinear_models/` contiene per ciascun sottoinsieme tabella di confronto,
+metriche per fold, griglie complete, termini con la variabile di provenienza, funzioni
+parziali del modello additivo e diagnostica. Il notebook `03_modelli_non_lineari.ipynb`
+legge quegli artefatti e produce figure e tabelle finali senza rieseguire lavoro
+computazionale.

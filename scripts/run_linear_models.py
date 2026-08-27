@@ -46,17 +46,14 @@ Come si lancia
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from sklearn.linear_model import Lasso, Ridge
 
-from src.baselines import all_baselines
 from src.data import PROJECT_ROOT
 from src.design import SUBSETS_IN_SCOPE, build_design, describe
 from src.experiment import (
-    ModelRun,
+    baseline_runs,
     comparison_table,
     coefficient_path,
     nested_selection_check,
@@ -68,9 +65,7 @@ from src.protocol import (
     N_SPLITS,
     SEARCH_SEEDS,
     check_no_group_leakage,
-    evaluate,
     make_splits,
-    summarize,
 )
 from src.registry import (
     LASSO_ALPHAS,
@@ -87,43 +82,6 @@ OUTPUT_DIR = PROJECT_ROOT / "experiments" / "linear_models"
 # annidato resta trascurabile: la misura vale come cautela di lettura per tutti
 # e tre, che condividono lo stesso motore di stima e lo stesso criterio.
 NESTED_CHECK_METHOD = "forward_stepwise"
-
-
-def baseline_runs(design, comparison_splits) -> list[ModelRun]:
-    """Le due baseline, valutate sulle stesse partizioni degli altri modelli.
-
-    Sono ricalcolate qui e non riprese dagli artefatti della convalida del
-    protocollo, cosi' che la tabella del blocco sia prodotta interamente da una
-    sola esecuzione e non dalla composizione di due esecuzioni diverse.
-    """
-    runs = []
-    labels = {
-        "baseline_costante": "Predizione costante",
-        "baseline_solo_ciclo": "Regressione sul solo numero di ciclo",
-    }
-    for key, model in all_baselines().items():
-        fold_metrics = evaluate(
-            model, design.X_train, design.y_train, design.groups_train, comparison_splits
-        )
-        fold_metrics.insert(0, "model", key)
-        summary = summarize(fold_metrics, label=key)
-        summary["label"] = labels[key]
-        summary["subset"] = design.subset
-        summary["config"] = "baseline"
-        summary["search_seconds"] = 0.0
-        summary["n_configurations"] = 1
-        summary["n_nonzero"] = 0 if key == "baseline_costante" else 1
-        runs.append(
-            ModelRun(
-                key=key,
-                label=labels[key],
-                subset=design.subset,
-                estimator=model,
-                fold_metrics=fold_metrics,
-                summary=summary,
-            )
-        )
-    return runs
 
 
 def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_jobs: int) -> dict:

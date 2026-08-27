@@ -1,0 +1,9 @@
+sottoinsieme,model,n_configurations,boundary,failed_configurations,convergence_warnings,expansion_columns,expansion_columns_nominal,search_seconds
+FD001,polynomial,3,,0,0,,,3.930724249919877
+FD001,step_functions,16,,0,0,360.0,360.0,9.78123416705057
+FD001,spline,30,,0,0,,,5.250064457999542
+FD001,gam,45,,0,0,,,73.12372566701379
+FD003,polynomial,3,,0,0,,,5.173369250027463
+FD003,step_functions,16,,0,0,475.0,570.0,12.286314375000076
+FD003,spline,30,model__expand__degree=minimo,0,0,,,6.736146333976649
+FD003,gam,45,,0,0,,,134.56923516700044

@@ -35,6 +35,23 @@ Convergenza
     convergente produce un punteggio che non e' confrontabile con gli altri, e
     ignorare l'avviso significherebbe lasciarla entrare in graduatoria senza
     che nulla lo segnali.
+
+Configurazioni non valutabili
+    Quando l'adattamento o la predizione di una configurazione solleva
+    un'eccezione, la ricerca su griglia di scikit-learn assegna a quella
+    configurazione un punteggio non definito e prosegue. La configurazione
+    sparisce cosi' dalla graduatoria senza lasciare traccia nel risultato: la
+    ricerca riporta un vincitore regolare, e nulla distingue una griglia
+    valutata per intero da una in cui una parte non e' mai stata provata. La
+    conseguenza sul protocollo e' diretta, perche' il controllo sui bordi
+    diventa privo di significato se la zona verso cui la griglia e' stata
+    estesa e' proprio quella che non viene valutata.
+
+    Le configurazioni con punteggio non definito sono percio' contate e
+    riportate insieme al resto. Il punteggio non definito non viene
+    trasformato in errore: un'eccezione interromperebbe l'intero esperimento
+    per una singola configurazione, mentre qui la ricerca resta utilizzabile e
+    il fatto e' registrato negli artefatti.
 """
 
 from __future__ import annotations
@@ -68,6 +85,7 @@ class SearchResult:
     table: pd.DataFrame = field(repr=False)
     boundary: list[str] = field(default_factory=list)
     convergence_warnings: int = 0
+    failed_configurations: int = 0
     seconds: float = 0.0
 
     @property
@@ -148,11 +166,14 @@ def grid_search(
         table[f"mean_test_{metric}"] = -table[f"mean_test_{metric}"]
     table = table.sort_values("rank_test_rmse").reset_index(drop=True)
 
+    n_failed = int((~np.isfinite(table["mean_test_rmse"])).sum())
+
     return SearchResult(
         best_params=dict(search.best_params_),
         best_score=float(-search.best_score_),
         table=table,
         boundary=_boundary_parameters(param_grid, search.best_params_),
         convergence_warnings=n_convergence,
+        failed_configurations=n_failed,
         seconds=seconds,
     )

@@ -1,0 +1,13 @@
+sottoinsieme,modello_a,modello_b,concordanza_ordinamenti
+FD001,polynomial,step_functions,0.9195046439628483
+FD001,polynomial,spline,0.6264189886480909
+FD001,polynomial,gam,0.9029927760577915
+FD001,step_functions,spline,0.6635706914344686
+FD001,step_functions,gam,0.8844169246646026
+FD001,spline,gam,0.8596491228070176
+FD003,polynomial,step_functions,0.4280701754385965
+FD003,polynomial,spline,0.02280701754385965
+FD003,polynomial,gam,0.25263157894736843
+FD003,step_functions,spline,0.6280701754385964
+FD003,step_functions,gam,0.7807017543859649
+FD003,spline,gam,0.8578947368421053
