@@ -1,0 +1,13 @@
+sottoinsieme,model,n_configurations,boundary,failed_configurations,convergence_warnings,n_leaves,depth,search_seconds
+FD001,tree,27.0,,0.0,0.0,57.0,10.0,7.620542707969435
+FD001,bagging,,,,,,,
+FD001,random_forest,15.0,,0.0,0.0,,,133.48095945897512
+FD001,adaboost,100.0,"model__n_estimators=massimo, model__learning_rate=minimo, model__estimator__max_depth=massimo",0.0,0.0,,,784.2974727079272
+FD001,gradient_boosting,36.0,,0.0,0.0,,,439.6203241670737
+FD001,xgboost,36.0,,0.0,0.0,,,19.974489749991335
+FD003,tree,27.0,,0.0,0.0,119.0,13.0,9.155324334045872
+FD003,bagging,,,,,,,
+FD003,random_forest,15.0,,0.0,0.0,,,185.40348183305468
+FD003,adaboost,100.0,"model__n_estimators=massimo, model__learning_rate=minimo, model__estimator__max_depth=massimo",0.0,0.0,,,1012.3897363329306
+FD003,gradient_boosting,36.0,,0.0,0.0,,,559.0659557500621
+FD003,xgboost,36.0,,0.0,0.0,,,19.3827902500052

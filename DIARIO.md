@@ -1817,3 +1817,54 @@ miglioramento punta verso la sua degenerazione in un modello gia' presente nel
 confronto. Il costo dell'applicazione integrale della regola sui bordi si e'
 concentrato su questo modello, che ha assorbito circa meta' del tempo di calcolo
 del blocco per collocarsi ultimo fra i cinque insiemi.
+
+## [28-08-2026] — Notebook di analisi del blocco ad albero
+
+Il notebook `notebooks/04_modelli_ad_albero.ipynb` segue la struttura dei tre
+precedenti e non esegue lavoro computazionale: legge gli artefatti prodotti dai
+due script del blocco e ne ricava figure e tabelle. Unica eccezione, l'albero
+potato, che viene caricato gia' adattato da `{SUBSET}_pruned_tree.joblib` perche'
+la sua struttura va disegnata e non descritta. Il file serializzato non e'
+versionato, come tutto cio' che sta in `experiments/`; la figura che ne deriva lo
+e'.
+
+Quattro sezioni sono proprie di questo blocco e non hanno equivalente nei
+notebook precedenti.
+
+Il confronto fra le due implementazioni di gradient boosting appaia le 36
+configurazioni della griglia condivisa e le rappresenta contro la bisettrice. E'
+la lettura per cui le due griglie erano state fatte identiche: gli scarti sono
+dell'ordine del centesimo di ciclo e i tempi di ricerca differiscono di due
+ordini di grandezza, quindi la differenza fra le due righe della tabella di
+confronto e' computazionale e non statistica. Lo scarto residuo ha causa nota
+nella regolarizzazione predefinita dell'implementazione esterna, che non e' stata
+azzerata.
+
+La curva di saturazione degli insiemi per aggregazione, prodotta dalla sonda dei
+costi, entra nel notebook con due funzioni: giustificare il numero di alberi
+fissato invece che cercato, e mostrare la sovrapposizione fra bagging e foresta a
+variabili complete, che e' il controllo di correttezza del blocco. La figura
+mostra anche che su una singola partizione il segno dell'effetto della
+decorrelazione non coincide con quello osservato sulle 15 partizioni di
+confronto: e' l'esempio piu' diretto, dentro questo blocco, del motivo per cui il
+protocollo non riporta numeri di una partizione sola.
+
+La struttura dell'albero potato e' disegnata sui primi tre livelli, e le soglie
+di divisione sono riportate anche nelle unita' originali delle variabili
+invertendo lo standardizzatore adattato. Motivo: la standardizzazione e' dentro
+la pipeline di tutti i modelli per parita' di condizioni, e senza la conversione
+le soglie sarebbero in unita' standardizzate e il disegno non sarebbe leggibile.
+
+Le due misure di importanza sono tenute separate e confrontate: mappa di calore
+della riduzione di impurita' sui sei modelli, barre della permutazione in cicli,
+e una tabella con il peso del numero di ciclo sotto entrambe, la concentrazione
+dell'importanza e la concordanza fra i due ordinamenti.
+
+Nella diagnostica e' inclusa la verifica che il bordo sul numero di stadi di
+AdaBoost non fosse apparente. L'implementazione interrompe il boosting se uno
+stadio supera la meta' dell'errore relativo, e in quel caso le configurazioni a
+400 e a 800 stadi avrebbero punteggi identici a parita' di tasso e profondita'.
+Non li hanno: gli stadi sono stati adattati tutti e il bordo era reale.
+
+Il notebook produce nove tabelle in `results/tables/` e sette figure in
+`results/figures/`, versionate come prova tracciabile dei risultati.
