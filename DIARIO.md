@@ -1619,3 +1619,201 @@ metriche per fold, griglie complete, termini con la variabile di provenienza, fu
 parziali del modello additivo e diagnostica. Il notebook `03_modelli_non_lineari.ipynb`
 legge quegli artefatti e produce figure e tabelle finali senza rieseguire lavoro
 computazionale.
+
+## [28-08-2026] — Blocco 3: la famiglia ad albero (laboratori 9 e 10)
+
+### Griglie e loro determinazione
+
+I costi sono stati misurati prima di fissare le griglie, con
+`scripts/measure_tree_costs.py`, sulla prima partizione del seme di ricerca e
+sugli angoli costosi delle griglie candidate. La configurazione piu' onerosa e'
+il gradient boosting di scikit-learn a 600 stadi e profondita' 5, con 25,6 s per
+adattamento su FD001 e 31,6 su FD003. La stessa configurazione costa mezzo
+secondo all'implementazione esterna, con errore che coincide alla seconda cifra.
+Un insieme di 300 alberi non potati ha 3,7 milioni di nodi e occupa circa 240 MB,
+quantita' che determina il numero di processi utilizzabili nella ricerca e non il
+disegno dell'esperimento.
+
+Potatura per cost-complexity. Il laboratorio ricava la sequenza dei valori di
+potatura dai dati e sceglie quello che minimizza l'errore sull'insieme di
+verifica. Nessuna delle due cose e' trasferibile: la scelta guarderebbe i dati su
+cui si misura il risultato, e una sequenza ricavata dai dati cambia da fold a
+fold, quindi non definisce una griglia comune ne' alle partizioni ne' ai due
+sottoinsiemi. Motivo: la griglia e' un insieme di valori fissato a priori, uguale
+ovunque, `[0.0]` seguito da 26 valori logaritmici fra 0,01 e 1000. La scala non e'
+arbitraria: il parametro e' nelle unita' dell'impurita', l'impurita' della radice
+e' la varianza del target e vale circa 1.700 su entrambi i sottoinsiemi, quindi
+l'intervallo copre per costruzione l'intero percorso, dall'albero non potato
+all'albero ridotto alla radice.
+
+Alternative scartate: usare la sequenza calcolata sull'intera parte di
+addestramento (dipende dal target di tutti i motori, compresi quelli che finiscono
+nelle parti di verifica dei fold, e produce griglie diverse sui due sottoinsiemi);
+ricalcolarla dentro ogni fold con una selezione interna (tratterebbe l'albero in
+modo piu' severo degli altri cinque modelli del blocco, e i quindici fold
+sceglierebbero alberi diversi, quindi non esisterebbe un albero potato di cui
+mostrare la struttura).
+
+Numero di alberi degli insiemi per aggregazione. Non e' un iperparametro: l'errore
+decresce in valore atteso in modo monotono e satura, quindi governa la precisione
+di una media e non un compromesso. Metterlo in griglia farebbe selezionare sempre
+il valore massimo e chiederebbe alla regola sui bordi un'estensione senza fine.
+Motivo: e' fissato a 300, sopra i valori del laboratorio, e la scelta e' verificata
+dalla curva di saturazione misurata prima dell'esecuzione. Fra 300 e 500 alberi
+l'errore si sposta di 0,010 cicli sul bagging di FD001 e di 0,024 sulla foresta di
+FD003, contro una dispersione fra fold di 1,1, e su FD003 non e' monotono: oltre
+le poche centinaia di alberi la variazione residua e' rumore della partizione.
+
+Bagging. Con alberi non potati e numero di alberi fissato non ha iperparametri, ed
+entra in tabella senza configurazione. E' lo stesso modello della foresta quando
+ogni divisione puo' scegliere fra tutte le variabili, e la curva di saturazione lo
+conferma: a parita' di numero di alberi i due errori coincidono (16,150 contro
+16,150 su FD001, 17,050 contro 17,045 su FD003). E' il controllo di correttezza
+analogo alla coincidenza fra regressione sulle componenti principali a componenti
+complete e minimi quadrati.
+
+Foresta casuale. La frazione di variabili candidate e' espressa come frazione e non
+come conteggio, perche' i due sottoinsiemi hanno 18 e 19 colonne e la griglia deve
+restare letteralmente la stessa.
+
+Gradient boosting e implementazione esterna ricevono griglie identiche, sugli
+stessi assi e sugli stessi valori. Motivo: il confronto fra le due righe riguarda
+cosi' l'implementazione e non il budget di ricerca. La differenza che resta e' la
+regolarizzazione esplicita che l'implementazione esterna applica per impostazione
+predefinita, che non e' stata azzerata.
+
+### Problema tecnico sulle importanze
+
+Sintomo: la prima esecuzione si interrompe sul bagging con un errore di attributo
+mancante. Causa: `BaggingRegressor` e' l'unico insieme di scikit-learn che non
+espone `feature_importances_`, mentre foresta, AdaBoost e gradient boosting lo
+espongono. Soluzione: l'importanza viene ricostruita come media non pesata delle
+importanze dei suoi alberi, che e' la definizione stessa usata dalla foresta,
+verificata sulla sorgente (l'importanza restituita da una foresta coincide cifra
+per cifra con la media delle importanze dei suoi alberi). La ricostruzione non
+introduce quindi una grandezza diversa da quella riportata sulle altre righe.
+
+Seconda differenza fra librerie, individuata prima dell'esecuzione:
+`feature_importances_` dell'implementazione esterna restituisce per impostazione
+predefinita il guadagno medio per divisione e non lo normalizza, mentre
+scikit-learn restituisce la riduzione di impurita' totale pesata e normalizzata a
+somma uno. Sotto lo stesso nome la tabella avrebbe contenuto due grandezze diverse
+a seconda della riga. Il registro chiede il guadagno complessivo, che e' l'analogo
+della grandezza di scikit-learn, e il lettore normalizza tutte le colonne a somma
+uno.
+
+L'importanza per permutazione e' calcolata sulla parte di verifica di ciascuna
+delle cinque partizioni del seme di ricerca, con il modello riaddestrato sulla
+parte di addestramento della stessa partizione. Il laboratorio la calcola
+sull'insieme di verifica ufficiale, che qui e' chiuso fino alla chiusura della
+graduatoria.
+
+### Catena delle estensioni imposta dalla regola sui bordi
+
+La prima esecuzione completa ha prodotto quattro bordi veri. Le estensioni sono
+state applicate su entrambi i sottoinsiemi anche dove il bordo si era manifestato
+su uno solo, con un punto per asse e mantenendo la spaziatura propria dell'asse. I
+valori di partenza sono rimasti dentro la griglia: toglierli perche' avevano
+ottenuto punteggi peggiori sarebbe stata una selezione a posteriori sulla griglia.
+
+Gradient boosting e implementazione esterna avevano selezionato la profondita'
+massima su FD003. Estesa a 8, entrambi confermano la configurazione precedente su
+entrambi i sottoinsiemi: il bordo non vincolava, e la colonna aggiunta resta in
+griglia con i suoi punteggi.
+
+AdaBoost ha richiesto due estensioni e si e' fermato ugualmente sull'angolo della
+griglia. L'analisi dell'algoritmo, verificata sulla sorgente di scikit-learn,
+spiega perche'. In AdaBoost.R2 il peso di ciascuno stadio e' il tasso di
+apprendimento moltiplicato per il logaritmo dell'inverso dell'errore relativo,
+quindi il tasso riscala tutti i pesi della stessa costante; l'aggregazione e' una
+mediana pesata, che individua lo stadio in cui la somma cumulata dei pesi supera
+meta' del totale ed e' percio' invariante a un riscalamento comune. Il tasso non
+agisce sulla predizione attraverso i pesi degli stadi, ma soltanto attraverso
+l'aggiornamento dei pesi delle osservazioni. Quando tende a zero il ripesaggio si
+annulla, ogni stadio viene adattato su un campione bootstrap a pesi uniformi e le
+predizioni sono combinate per mediana: quel limite e' il bagging, che il confronto
+contiene gia' con una riga propria.
+
+CORREZIONE della classificazione dei bordi fissata all'inizio del blocco: il bordo
+inferiore del tasso di apprendimento di AdaBoost era stato elencato fra i bordi
+veri, ed e' invece strutturale, nello stesso senso della potatura nulla e della
+frazione unitaria di variabili candidate. Sotto non c'e' un modello nuovo, c'e' un
+modello gia' in tabella. La correzione non dipende dai punteggi ottenuti e vale
+allo stesso modo qualunque fosse stato il risultato. La proprieta' riguarda il
+solo asse del tasso: sull'asse della profondita' l'estensione e' rimasta dovuta,
+perche' con un tasso interno alla griglia il modello non degenera e alberi di base
+piu' profondi sono un modello diverso, non un modello gia' presente.
+
+Criterio di chiusura della catena, fissato prima di lanciare l'ultima estensione:
+un'estensione che sposta il modello di meno della dispersione fra fold ha
+raggiunto la regione in cui il protocollo non distingue, e continuare
+inseguirebbe differenze che la regola di lettura del progetto dichiara
+illeggibili. L'ultima estensione ha spostato AdaBoost di 0,24 su FD001 (dispersione
+1,27) e di 0,46 su FD003 (dispersione 1,18), quindi sotto la soglia su entrambi, e
+la catena e' stata chiusa. Il criterio vale come condizione di arresto di una
+catena gia' iniziata, non come motivo per non applicare la regola sui bordi.
+
+### Risultati
+
+FD001, RMSE medio e dispersione sulle 15 partizioni di confronto.
+
+| Modello | Configurazione | RMSE | MAE | R quadro |
+|---|---|---|---|---|
+| Foresta casuale | frazione 0,33, foglia minima 5 | 16,59 ± 1,46 | 11,58 | 0,840 |
+| XGBoost | tasso 0,05, profondita' 3, 300 stadi | 16,70 ± 1,36 | 11,61 | 0,838 |
+| Gradient boosting | tasso 0,05, profondita' 3, 300 stadi | 16,71 ± 1,37 | 11,62 | 0,838 |
+| Bagging | nessun iperparametro | 16,89 ± 1,44 | 11,62 | 0,834 |
+| AdaBoost | tasso 0,01, profondita' 6, 800 stadi | 16,97 ± 1,27 | 12,24 | 0,833 |
+| Albero potato | ccp_alpha 0,631, 57 foglie, profondita' 10 | 18,48 ± 1,27 | 12,78 | 0,802 |
+| Solo numero di ciclo | baseline | 27,88 ± 2,47 | 21,49 | 0,549 |
+| Predizione costante | baseline | 41,69 ± 0,14 | 36,98 | -0,002 |
+
+FD003.
+
+| Modello | Configurazione | RMSE | MAE | R quadro |
+|---|---|---|---|---|
+| XGBoost | tasso 0,05, profondita' 5, 300 stadi | 14,56 ± 1,11 | 9,35 | 0,871 |
+| Gradient boosting | tasso 0,05, profondita' 5, 300 stadi | 14,58 ± 1,14 | 9,36 | 0,870 |
+| Foresta casuale | frazione 0,33, foglia minima 5 | 14,70 ± 1,21 | 9,45 | 0,868 |
+| Bagging | nessun iperparametro | 14,94 ± 1,11 | 9,44 | 0,864 |
+| AdaBoost | tasso 0,01, profondita' 6, 800 stadi | 15,52 ± 1,18 | 10,72 | 0,853 |
+| Albero potato | ccp_alpha 0,398, 119 foglie, profondita' 13 | 16,87 ± 1,13 | 10,71 | 0,827 |
+| Solo numero di ciclo | baseline | 35,12 ± 2,64 | 27,53 | 0,244 |
+| Predizione costante | baseline | 40,73 ± 0,65 | 35,55 | -0,007 |
+
+ESITO: i cinque insiemi non sono ordinabili sotto la regola di lettura, con 0,27
+dispersioni fra il primo e l'ultimo su FD001 e 0,84 su FD003. L'albero singolo e'
+l'unico modello della famiglia che se ne stacca, indietro di 1,38 e 2,07
+dispersioni. La famiglia non produce un vincitore, produce un plateau.
+
+Il confronto con i blocchi precedenti e' asimmetrico fra i due sottoinsiemi. Su
+FD003 il miglior modello ad albero sta a 1,2 dispersioni dalle spline (14,56 ± 1,11
+contro 15,91 ± 1,10) ed e' un vantaggio leggibile. Su FD001 la distanza e' 0,6
+dispersioni (16,59 ± 1,46 contro 17,46 ± 1,21), quindi sotto la risoluzione del
+protocollo: su quel sottoinsieme la famiglia ad albero non batte in modo
+difendibile il blocco non lineare.
+
+La separazione fra bagging e foresta va nella direzione attesa su entrambi i
+sottoinsiemi ma vale 0,21 e 0,34 dispersioni: l'effetto della decorrelazione e'
+visibile nel segno e non nella misura del confronto. Si legge invece bene nelle
+importanze per permutazione, dove il peso del numero di ciclo scende da 12,41 a
+7,87 su FD001 e da 14,82 a 5,70 su FD003 passando dal bagging alla foresta.
+Obbligando ogni divisione a scegliere fra un terzo delle variabili, la foresta
+costruisce percorsi ridondanti, e mescolare il numero di ciclo lascia intatta
+l'informazione che i sensori portano al suo posto.
+
+AdaBoost si ferma a 16,97 e 15,52, appena sopra il bagging, coerentemente con
+l'analisi che ne indica il bagging come limite della direzione verso cui la
+ricerca si muoveva.
+
+Limiti di questa lettura. Il numero di configurazioni esplorate varia da 1 a 100
+fra le righe della stessa tabella: il bagging, che non ha griglia, non paga
+distorsione da selezione, mentre AdaBoost ne paga quanto cento configurazioni
+valutate sulle stesse partizioni su cui il punteggio viene poi riportato. Il
+protocollo e' identico per tutti, ma il confronto non e' a parita' di questo
+fattore. AdaBoost e' inoltre riportato su una configurazione d'angolo, quindi al
+miglior valore della griglia esplorata e non al suo ottimo: la direzione di
+miglioramento punta verso la sua degenerazione in un modello gia' presente nel
+confronto. Il costo dell'applicazione integrale della regola sui bordi si e'
+concentrato su questo modello, che ha assorbito circa meta' del tempo di calcolo
+del blocco per collocarsi ultimo fra i cinque insiemi.
