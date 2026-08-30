@@ -1868,3 +1868,237 @@ Non li hanno: gli stadi sono stati adattati tutti e il bordo era reale.
 
 Il notebook produce nove tabelle in `results/tables/` e sette figure in
 `results/figures/`, versionate come prova tracciabile dei risultati.
+
+## [30-08-2026] — Blocco dei metodi a margine e delle reti: SVR con tre kernel e percettrone multistrato
+
+### Sonda dei costi, preliminare alle griglie
+
+La stima a margine con kernel ha costo che cresce fra il quadrato e il cubo del numero di righe,
+e le righe di addestramento per fold sono 16.435 su FD001 e 19.303 su FD003: il blocco poteva
+risultare impraticabile sotto il protocollo del progetto. Le griglie sono state fissate dopo una
+misura e non su una stima, con `scripts/measure_kernel_costs.py`, sulla prima partizione del seme
+di ricerca.
+
+Le misure escludono il problema. A dimensione piena, sulla configurazione centrale, l'adattamento
+richiede 4,6 s con kernel lineare, 1,8 con radiale e 3,5 con polinomiale su FD001, e 6,9, 2,3 e
+5,4 su FD003. Sull'angolo con penalizzazione 100 e banda 1 ciclo si sale a 26,6, 7,7 e 23,7 su
+FD001 e a 42,0, 12,1 e 42,1 su FD003. L'esponente empirico misurato fra i due punti piu' grandi
+della scala vale fra 1,83 e 2,06 sui sei casi: la crescita e' quadratica, non cubica.
+
+Motivo della decisione conseguente: il blocco gira sotto il protocollo pieno, sulla matrice
+intera, senza sottocampionamenti e senza trattamenti differenziati. Sono state valutate e
+scartate tre alternative, tutte predisposte per il caso in cui il costo fosse risultato
+proibitivo. Il diradamento delle righe di addestramento dentro il fold, scartato perche' non
+necessario e perche' avrebbe reso questa famiglia l'unica valutata su una matrice ridotta. La
+stima in forma primale del solo kernel lineare, misurata (0,7 s contro 26,6 alla stessa
+configurazione) e scartata perche' risolve lo stesso problema con un ottimizzatore diverso, non
+compare nel materiale del laboratorio e non serve piu' una volta caduto il vincolo di costo. La
+riduzione del protocollo per la sola famiglia a margine, scartata a priori perche' avrebbe rotto
+la parita' del protocollo di valutazione, che e' il fondamento del confronto.
+
+La dimensione della cache del kernel resta al valore predefinito: 200, 500 e 1.000 MB producono
+tempi identici a un centesimo di secondo. La matrice del kernel a dimensione piena occuperebbe
+circa 2,2 GB e non entra in cache a nessuna di quelle dimensioni.
+
+### Scala della banda di insensibilita'
+
+La griglia del laboratorio non e' trasferibile. Il laboratorio usa 0,1 su un target con
+deviazione standard circa 1,15, cioe' circa il 9 per cento della dispersione; qui il target e' in
+cicli e ha deviazione standard circa 41, quindi lo stesso rapporto vale circa 4 cicli.
+Trascrivere il valore alla lettera avrebbe reso vettore di supporto quasi ogni riga, con effetto
+simultaneo sulla correttezza della specificazione e sul costo della stima. La griglia adottata
+copre da 0,5 a 16 cicli, dove la frazione di vettori di supporto misurata passa dal 96 al 43 per
+cento.
+
+### Condizionamento del kernel polinomiale
+
+Sintomo osservato: nella sonda, la configurazione con ampiezza 0,5 su un quinto delle righe ha
+richiesto 43,9 milioni di iterazioni e 136,7 s su FD001, 73,9 milioni e 261,8 s su FD003, senza
+alcun avviso di mancata convergenza.
+
+Causa radice: il valore del kernel polinomiale e' il prodotto interno fra due righe moltiplicato
+per l'ampiezza ed elevato al grado. Con 18 colonne standardizzate il prodotto interno e'
+dell'ordine delle 18 unita', quindi oltre l'inverso del numero di colonne la matrice del kernel
+assume valori di ampiezza crescente e il problema che l'ottimizzatore risolve diventa mal
+condizionato. Non e' mancata convergenza: e' convergenza lentissima verso una soluzione
+inaffidabile. La misura a dimensione piena lo conferma: ad ampiezza 0,15 e grado 2 l'errore vale
+110,1 cicli su FD001 e 18,5 su FD003, cioe' un fattore sei di differenza fra due sottoinsiemi che
+tutti gli altri modelli trattano quasi allo stesso modo. Il kernel radiale non ha questo problema
+perche' il suo valore resta fra zero e uno.
+
+Soluzioni adottate, tre e distinte.
+
+L'estremo superiore dell'ampiezza del kernel polinomiale e' fissato all'inverso del numero di
+colonne, circa 0,06, ed e' dichiarato bordo strutturale prima dell'esecuzione: oltre non c'e' un
+modello migliore, c'e' una stima che non converge. Il kernel radiale conserva una griglia che
+arriva a 0,5. L'asimmetria fra le due griglie e' motivata dalla matematica del kernel e non dal
+tempo di calcolo.
+
+Il grado del kernel polinomiale resta fissato a 3, come nel laboratorio, e non entra in griglia.
+Motivo: sull'angolo peggiore il grado 4 richiede 762 s su FD001 e 1.372 su FD003 per singolo
+adattamento e in entrambi i casi produce una stima troncata, contro i 24 e 42 s del grado 3 ad
+ampiezza interna alla griglia. Un asse meta' dei cui valori produce stime troncate porterebbe in
+graduatoria punteggi non confrontabili fra loro. La scelta e' un limite dichiarato del blocco.
+
+Il numero massimo di iterazioni della stima a margine e' fissato a 20 milioni per tutti e tre i
+kernel. Il valore sta sopra il fabbisogno della configurazione legittima piu' esigente osservata,
+che ne ha richieste 12,7 milioni a dimensione piena convergendo regolarmente, e sotto quello del
+caso patologico. E' lo stesso trattamento gia' applicato ai modelli stimati per discesa
+coordinata. Nell'esecuzione del blocco la protezione non e' mai intervenuta.
+
+### Arresto della stima della rete
+
+L'arresto anticipato con partizione interna resta disattivato. Motivo: la partizione che
+`MLPRegressor` costruisce e' ottenuta mescolando le righe, quindi collocherebbe cicli adiacenti
+dello stesso motore da entrambe le parti, che e' la contaminazione che il vincolo di gruppo del
+protocollo esiste per escludere, reintrodotta dentro il modello dopo essere stata esclusa fuori.
+
+Il numero massimo di iterazioni entra invece in griglia, a differenza del numero di alberi degli
+insiemi per aggregazione del blocco precedente, che e' fissato. Motivo: le due quantita' si
+comportano in modo diverso, e la curva misurata prima dell'esecuzione lo mostra. Sull'architettura
+a due strati con passo 1e-3, su FD001, la perdita di addestramento scende da 114,0 a 74,0 fra 100
+e 3.000 iterazioni mentre l'errore sulla parte di verifica della partizione sale da 15,86 a 18,87
+cicli. Le iterazioni non fanno saturare l'errore: lo fanno risalire, quindi governano un
+compromesso e vanno selezionate.
+
+Una prima formulazione di questa motivazione affermava che il criterio di arresto interno della
+libreria non fosse operativo su questa scala, sulla base del confronto fra la tolleranza (1e-4) e
+l'ordine di grandezza della perdita (centinaia di cicli al quadrato). L'affermazione e' errata ed
+e' stata corretta: il criterio interviene sulle architetture piu' strette e non su quelle piu'
+larghe. La configurazione selezionata su FD001 ha limite di mille iterazioni e si ferma a 592
+quando viene riaddestrata sull'intera parte di addestramento, ed e' il motivo per cui le
+configurazioni con limite a mille e a duemila iterazioni hanno punteggi identici. La conclusione
+che dipendeva da quella affermazione non cambia, perche' poggia sulla curva misurata.
+
+La penalizzazione sui pesi resta al valore predefinito e fuori griglia: la capacita' e' gia'
+governata da due assi cercati, l'architettura e il numero di iterazioni, e un terzo asse che
+controlla la stessa quantita' avrebbe triplicato la griglia senza aggiungere una dimensione di
+scelta distinta.
+
+### Regola sui bordi ed estensioni applicate
+
+Regola fissata prima dell'esecuzione. Bordi veri, che producono estensione se selezionati:
+entrambi gli estremi della penalizzazione, con estensione di una decade; entrambi gli estremi
+della banda, con dimezzamento verso il basso e raddoppio verso l'alto; entrambi gli estremi
+dell'ampiezza del kernel radiale; l'estremo inferiore dell'ampiezza del kernel polinomiale;
+entrambi gli estremi del numero di iterazioni della rete e del passo di apprendimento;
+l'architettura piu' capiente. Bordo strutturale, che non produce estensione: il solo estremo
+superiore dell'ampiezza del kernel polinomiale.
+
+La prima esecuzione ha selezionato configurazioni su bordi in sette casi. Le estensioni sono
+state applicate a entrambi i sottoinsiemi anche quando il bordo si era manifestato su uno solo,
+perche' griglie diverse fra i due renderebbero le due repliche non piu' condotte sotto lo stesso
+protocollo. Gli assi della penalizzazione e della banda hanno smesso di essere condivisi fra i tre
+kernel, perche' i bordi toccati sono opposti: la variante lineare e quella polinomiale hanno
+toccato il minimo della penalizzazione, quella radiale il massimo. I valori di partenza restano
+in griglia con i loro punteggi anche quando peggiori.
+
+La catena si e' chiusa dopo una sola estensione. Spostamento di ciascun modello fra la prima
+esecuzione e quella estesa, contro la dispersione fra fold:
+
+| Modello | Prima | Dopo | Spostamento | Dispersione |
+|---|---|---|---|---|
+| FD001 kernel lineare | 20,318 | 20,320 | +0,002 | 1,12 |
+| FD001 kernel radiale | 16,961 | 16,961 | 0,000 | 1,41 |
+| FD001 kernel polinomiale | 23,354 | 23,354 | 0,000 | 0,93 |
+| FD001 rete | 16,581 | 16,581 | 0,000 | 1,40 |
+| FD003 kernel lineare | 19,944 | 19,826 | -0,118 | 1,52 |
+| FD003 kernel radiale | 14,676 | 14,676 | 0,000 | 1,37 |
+| FD003 kernel polinomiale | 26,335 | 26,335 | 0,000 | 2,67 |
+| FD003 rete | 14,045 | 14,042 | -0,003 | 1,06 |
+
+Ogni estensione ha spostato il modello di almeno un ordine di grandezza meno della dispersione fra
+fold su entrambi i sottoinsiemi, che e' la condizione di chiusura fissata a priori. Le due
+estensioni verso l'alto hanno peggiorato: penalizzazione 1000 sul kernel radiale da' 16,834 contro
+16,789 su FD001 e 15,250 contro 14,778 su FD003, e la banda a 32 cicli peggiora tutti i kernel su
+entrambi i sottoinsiemi.
+
+Restano selezionati tre estremi dopo l'estensione. La penalizzazione minima del kernel lineare su
+entrambi i sottoinsiemi, su un profilo che varia di 0,047 cicli su quattro decadi: la catena si
+chiude per movimento insufficiente e non perche' il bordo sia sparito. L'architettura piu'
+capiente della rete su FD003, dove il profilo lungo la capacita' e' ripido in basso (27,18 cicli
+con otto unita' nascoste) e piatto in cima. L'ampiezza massima del kernel polinomiale su entrambi,
+che e' il bordo strutturale e non produce estensione.
+
+### Risultati del blocco
+
+Errore quadratico medio in cross-validation, media e deviazione standard sulle 15 partizioni di
+confronto.
+
+| Modello | FD001 | FD003 |
+|---|---|---|
+| Percettrone multistrato | 16,58 ± 1,40 | 14,04 ± 1,06 |
+| SVR, kernel radiale | 16,96 ± 1,41 | 14,68 ± 1,37 |
+| SVR, kernel lineare | 20,32 ± 1,12 | 19,83 ± 1,52 |
+| SVR, kernel polinomiale | 23,35 ± 0,93 | 26,34 ± 2,67 |
+| Baseline sul solo numero di ciclo | 27,88 ± 2,47 | 35,12 ± 2,64 |
+| Predizione costante | 41,69 ± 0,14 | 40,73 ± 0,65 |
+
+Configurazioni selezionate: kernel lineare penalizzazione 0,01 e banda 16 su FD001, banda 8 su
+FD003; kernel radiale penalizzazione 100, banda 8, ampiezza 0,015 su FD001, penalizzazione 10,
+banda 4, ampiezza 0,05 su FD003; kernel polinomiale penalizzazione 10 e banda 16 su FD001,
+penalizzazione 0,1 e banda 16 su FD003, ampiezza 0,06 su entrambi; rete a sedici unita' con passo
+1e-3 e mille iterazioni su FD001, a due strati da 128 e 64 unita' con passo 1e-4 e 250 iterazioni
+su FD003.
+
+Lettura. La rete e il kernel radiale raggiungono il livello del miglior modello dei blocchi
+precedenti (16,59 ± 1,46 e 14,56 ± 1,11 per il migliore della famiglia ad albero) e non lo
+superano in modo leggibile: i divari valgono 0,01 e 0,52 cicli contro dispersioni sopra l'unita',
+quindi la regola di lettura del progetto non ordina questi risultati. Tre famiglie costruite su
+principi diversi convergono sullo stesso livello di errore, il che indica che il limite osservato
+dipende dal problema e dalla rappresentazione dei dati piu' che dalla classe di modelli.
+
+Il kernel lineare arriva dove arrivano i modelli lineari: 20,32 contro i 20,33 del blocco lineare
+su FD001, 19,83 contro 19,85 su FD003. Due stimatori diversi della stessa classe di funzioni,
+sotto perdite diverse, producono lo stesso numero a due decimali, ed e' una verifica indipendente
+che la catena dati e il protocollo non introducono differenze spurie fra blocchi.
+
+L'asimmetria fra i due sottoinsiemi si presenta qui in una forma nuova: riguarda la capacita'
+richiesta e non solo il livello di errore. La rete migliore su FD001 e' la piu' stretta della
+griglia, quella su FD003 la piu' larga, con profili di segno opposto lungo lo stesso asse. Due
+modi di guasto invece di uno chiedono una funzione piu' articolata.
+
+La frazione di vettori di supporto dei modelli selezionati sta fra il 44,5 e il 64,5 per cento.
+La predizione di questi modelli richiede quindi il calcolo del kernel contro decine di migliaia di
+righe, e sono i modelli piu' lenti in predizione dell'intero confronto, mentre alberi e rete
+rispondono in tempo costante rispetto alla dimensione dell'insieme di addestramento. La differenza
+non compare nella metrica.
+
+Nessuna configurazione non valutabile e nessuna stima interrotta dal tetto sulle iterazioni in
+tutto il blocco. La ricerca del kernel radiale su FD003 ha richiesto 10.504 s, quasi interamente
+nella colonna della penalizzazione 1000 aggiunta dall'estensione e risultata peggiore: e' il costo
+normale di applicare la regola sui bordi invece di decidere a posteriori.
+
+### Limiti dichiarati del blocco
+
+La riga del kernel polinomiale e' un limite superiore delle prestazioni della tecnica e non una
+sua misura: la griglia dell'ampiezza e' chiusa dal lato in cui il profilo del modello scende
+ancora, per una ragione di condizionamento numerico. Alla prima ampiezza successiva la stima non
+e' affidabile.
+
+Il grado del kernel polinomiale e' fissato e non selezionato, per la ragione misurata sopra.
+
+La rete e' stimata con un solo seme di inizializzazione dei pesi. La dispersione riportata sui 15
+fold contiene quindi la variabilita' dovuta alla partizione ma non quella dovuta
+all'inizializzazione, che per questa classe di modelli non e' trascurabile: la dispersione di
+quella riga e' sottostimata rispetto alla variabilita' complessiva della procedura.
+
+Il numero di configurazioni esplorate varia da 35 a 175 fra le righe della stessa tabella, quindi
+la distorsione ottimistica dovuta alla cross-validation non annidata non e' uniforme fra le righe.
+
+L'importanza per permutazione del kernel lineare su FD003 assegna al numero di ciclo 0,54 cicli
+contro i 4,63 dello stesso modello su FD001: la configurazione selezionata li' e' quella con
+penalizzazione minima e banda ampia, cioe' una funzione molto piatta, e su una funzione piatta la
+permutazione di una singola variabile sposta poco e il peso si ripartisce fra variabili correlate.
+Sul kernel polinomiale il numero di ciclo e' in dodicesima posizione su FD001 e in ultima su
+FD003, con aumento di errore negativo.
+
+### Artefatti
+
+`src/registry.py` esteso con `KERNEL_MODELS`, `src/margin.py` per le letture strutturali della
+famiglia, `scripts/measure_kernel_costs.py` per la sonda dei costi,
+`scripts/run_kernel_models.py` per l'esperimento, `notebooks/05_metodi_a_margine_e_reti.ipynb`
+per l'analisi. Otto figure e nove tabelle in `results/`.
+
+ESITO: quarto e ultimo blocco del confronto concluso. L'insieme di verifica ufficiale non e' stato
+letto in nessuna fase del blocco.
