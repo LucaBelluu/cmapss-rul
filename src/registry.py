@@ -193,6 +193,174 @@ Il bordo inferiore del tasso di apprendimento di AdaBoost
     modello non degenera e alberi di base piu' profondi sono un modello diverso,
     non un modello gia' presente.
 
+Griglie del blocco dei metodi a margine e delle reti
+    I quattro modelli del laboratorio 11 sono le tre varianti di kernel della
+    regressione a vettori di supporto e il percettrone multistrato. Le griglie
+    sono fissate su costi misurati a dimensione piena sulla prima partizione del
+    seme di ricerca, non su stime: l'adattamento a 16.435 righe richiede 4,6 s
+    con kernel lineare, 1,8 con kernel radiale e 3,5 con kernel polinomiale
+    sulla configurazione centrale, e sale rispettivamente a 26,6, 7,7 e 23,7
+    sull'angolo con penalizzazione 100 e banda 1 ciclo. L'esponente empirico
+    della crescita nel numero di righe vale fra 1,83 e 1,96 sui due punti piu'
+    grandi della scala, cioe' quadratico e non cubico. Il blocco gira percio'
+    sotto il protocollo pieno, sulla matrice intera, senza sottocampionamenti e
+    senza trattamenti differenziati.
+
+    Banda dell'insensibilita'. Il valore del laboratorio non e' trasferibile:
+    vale 0,1 su un target la cui deviazione standard e' circa 1,15, cioe' circa
+    il 9 per cento della dispersione. Qui il target e' in cicli e la sua
+    deviazione standard e' circa 41, quindi lo stesso rapporto corrisponde a
+    circa 4 cicli. La griglia copre da mezzo ciclo a sedici, cioe' da una banda
+    che rende vettore di supporto quasi ogni riga (il 96 per cento a un ciclo)
+    a una che ne lascia fuori piu' della meta' (il 33 per cento a sedici).
+
+    Ampiezza del kernel. La griglia del kernel radiale copre due ordini di
+    grandezza attorno al valore predefinito della libreria, che su dati
+    standardizzati vale l'inverso del numero di colonne, circa 0,055. Quella del
+    kernel polinomiale si ferma a quel valore, e la differenza fra le due non e'
+    una scelta di comodo. Il valore del kernel polinomiale e' il prodotto
+    interno fra due righe, moltiplicato per l'ampiezza ed elevato al grado: con
+    diciotto colonne standardizzate il prodotto interno e' dell'ordine delle
+    diciotto unita', quindi oltre l'inverso del numero di colonne la matrice del
+    kernel assume valori di ampiezza crescente e il problema che l'ottimizzatore
+    risolve diventa mal condizionato. Il kernel radiale non ha questo problema:
+    il suo valore resta in ogni caso fra zero e uno.
+
+    La degenerazione e' misurata e non supposta. Ad ampiezza 0,15 e grado 2
+    l'errore vale 110,1 cicli su FD001, cioe' peggio della predizione costante,
+    e 18,5 su FD003: lo stesso punto della griglia produce sui due sottoinsiemi
+    risultati che differiscono di un fattore sei, che e' il comportamento di una
+    stima instabile e non di un modello. Ad ampiezza 0,5 e grado 3 la stima
+    richiede 1.504 s e raggiunge comunque il tetto alle iterazioni. Il limite
+    superiore dell'ampiezza del kernel polinomiale e' percio' un bordo
+    strutturale, nello stesso senso in cui lo sono la potatura nulla e la
+    frazione unitaria di variabili candidate: oltre non c'e' un modello
+    migliore, c'e' una stima che non converge e il cui punteggio non e'
+    confrontabile.
+
+    Grado del kernel polinomiale. Resta fissato a 3, come nel laboratorio, e non
+    entra in griglia. La ragione e' misurata: sull'angolo peggiore il grado 4
+    richiede 762 s su FD001 e 1.372 su FD003 per singolo adattamento e in
+    entrambi i casi raggiunge il tetto alle iterazioni, contro i 24 e 42 s del
+    grado 3 alla stessa penalizzazione e ampiezza interna alla griglia. Un asse
+    meta' dei cui valori produce stime troncate porterebbe in graduatoria
+    punteggi non confrontabili fra loro, che e' il difetto che il conteggio
+    delle mancate convergenze esiste per segnalare. La scelta e' dichiarata qui
+    ed e' un limite del blocco, non una proprieta' del modello.
+
+    Tetto alle iterazioni della stima a margine. Senza tetto una configurazione
+    mal condizionata prosegue fino alla tolleranza per un tempo indeterminato:
+    la misura preliminare ha registrato 43,9 milioni di iterazioni su un quinto
+    delle righe. Il tetto e' fissato a 20 milioni, sopra il fabbisogno della
+    configurazione legittima piu' esigente osservata, che ne ha richieste 12,7
+    milioni a dimensione piena convergendo regolarmente. Taglia percio' il caso
+    patologico e non quelli regolari, ed e' lo stesso trattamento gia' applicato
+    ai modelli stimati per discesa coordinata. Le stime troncate restano
+    riconoscibili dal conteggio delle mancate convergenze registrato negli
+    artefatti: una configurazione selezionata con quel conteggio non nullo va
+    riletta e non accettata come tale.
+
+    Dimensione della cache del kernel. Resta al valore predefinito. La misura
+    preliminare confronta 200, 500 e 1.000 MB e restituisce tempi identici a un
+    centesimo di secondo: la matrice del kernel non entra in cache a nessuna di
+    quelle dimensioni e l'ottimizzatore non ne e' vincolato.
+
+    Numero di iterazioni della rete. E' in griglia, e la differenza rispetto al
+    numero di alberi degli insiemi per aggregazione e' sostanziale. Il numero di
+    alberi fa scendere l'errore in modo monotono e satura, quindi si fissa; le
+    iterazioni della rete fanno scendere la perdita di addestramento e fanno
+    risalire l'errore di verifica. La curva misurata prima dell'esecuzione lo
+    mostra su tutte e tre le architetture provate: su FD001 l'architettura a due
+    strati con passo 1e-3 passa da 15,86 cicli a cento iterazioni a 18,87 a
+    tremila, mentre la perdita di addestramento scende da 114,0 a 74,0. Il
+    numero di iterazioni governa quindi un compromesso e va selezionato come
+    tale. La griglia arriva a mille, oltre il valore del laboratorio.
+
+    Il criterio di arresto interno della rete confronta il miglioramento della
+    perdita con una tolleranza di 1e-4 mentre la perdita e' nell'ordine delle
+    centinaia di cicli al quadrato, quindi interviene solo su una parte delle
+    configurazioni: sulle architetture piu' strette si attiva prima del limite
+    (la configurazione selezionata su FD001 ha un limite di mille iterazioni e
+    si ferma a 592 quando e' riaddestrata sull'intera parte di addestramento),
+    su quelle piu' larghe il limite viene raggiunto. Il numero massimo di
+    iterazioni e' percio' la regola di arresto vincolante su parte della griglia
+    e non su tutta, il che non cambia la ragione per cui sta in griglia: e'
+    l'unico dei due meccanismi che sia sotto controllo e la curva misurata
+    mostra che l'errore di verifica dipende da dove la stima si ferma.
+
+    L'arresto anticipato della rete resta disattivato, che e' il valore
+    predefinito. La partizione interna che userebbe e' costruita mescolando le
+    righe, quindi collocherebbe cicli adiacenti dello stesso motore da entrambe
+    le parti: e' la contaminazione che il vincolo di gruppo del protocollo
+    esiste per escludere, e sarebbe introdotta dentro il modello dopo essere
+    stata esclusa fuori.
+
+    La penalizzazione sui pesi della rete resta al valore predefinito e non
+    entra in griglia. La capacita' del modello e' gia' governata da due assi
+    cercati, l'architettura e il numero di iterazioni, e un terzo asse che
+    controlla la stessa quantita' triplicherebbe la griglia senza aggiungere una
+    dimensione di scelta distinta.
+
+    Estensioni applicate. La prima esecuzione ha selezionato configurazioni su
+    bordi in sette casi, e la regola le ha estese dal lato toccato, con un punto
+    per asse e su entrambi i sottoinsiemi anche quando il bordo si e'
+    manifestato su uno solo. Gli assi della penalizzazione e della banda non
+    sono piu' condivisi fra i tre kernel, perche' i bordi toccati sono diversi:
+    la variante lineare e quella polinomiale hanno toccato il minimo della
+    penalizzazione, quella radiale il massimo, e estendere entrambi gli assi su
+    tutti e tre i modelli aggiungerebbe a ciascuno una regione che il suo
+    profilo mostra gia' in salita. I valori di partenza restano dentro le
+    griglie: toglierli perche' hanno ottenuto punteggi peggiori sarebbe una
+    selezione a posteriori sulla griglia stessa.
+
+    La penalizzazione e' estesa di una decade verso il basso per la variante
+    lineare e per quella polinomiale, di una decade verso l'alto per quella
+    radiale. La banda e' estesa a 32 cicli per la variante lineare e per quella
+    polinomiale; sulla radiale il minimo e' interno alla griglia su entrambi i
+    sottoinsiemi e l'asse resta invariato. Sulla rete sono estesi tutti e tre gli
+    assi e da entrambi i lati, perche' i due sottoinsiemi hanno selezionato
+    estremi opposti: l'architettura piu' stretta su FD001 e la piu' capiente su
+    FD003, il passo piu' grande su FD001 e il piu' piccolo su FD003.
+
+    L'estremo superiore dell'ampiezza del kernel polinomiale e' stato
+    selezionato su entrambi i sottoinsiemi e non viene esteso, perche' e' il
+    bordo strutturale dichiarato prima dell'esecuzione. Il profilo del modello
+    lungo quell'asse e' ancora in discesa quando la griglia finisce, quindi la
+    riga di quel modello e' un limite superiore delle sue prestazioni sotto una
+    parametrizzazione numericamente sana, e va letta come tale. La misura
+    preliminare mostra cosa c'e' oltre quel bordo: alla prima ampiezza
+    successiva la stessa configurazione produce un errore di 110,1 cicli su
+    FD001 e di 18,5 su FD003, cioe' un fattore sei di differenza fra due
+    sottoinsiemi che gli altri modelli trattano quasi allo stesso modo.
+
+    Regola sui bordi del blocco, fissata prima dell'esecuzione. Sono bordi veri,
+    che producono estensione se selezionati: entrambi gli estremi della
+    penalizzazione, con estensione di una decade; entrambi gli estremi della
+    banda, con estensione per dimezzamento verso il basso e raddoppio verso
+    l'alto; entrambi gli estremi dell'ampiezza del kernel radiale, con
+    estensione di un fattore tre; l'estremo inferiore dell'ampiezza del kernel
+    polinomiale; entrambi gli estremi del numero di iterazioni della rete e del
+    passo di apprendimento; l'architettura piu' capiente. E' bordo strutturale,
+    che non produce estensione, il solo estremo superiore dell'ampiezza del
+    kernel polinomiale, per la ragione numerica misurata sopra.
+
+    L'asse delle architetture non e' un asse ordinato in senso proprio. Il
+    controllo del codice lo ordina lessicograficamente, e su questi cinque
+    valori quell'ordine non coincide con quello della capacita' nelle posizioni
+    intermedie ma vi coincide agli estremi, che sono le uniche posizioni che il
+    controllo usa: il minimo resta lo strato singolo piu' stretto e il massimo
+    la rete a due strati piu' larga. Se il massimo venisse selezionato,
+    l'estensione aggiunge un'architettura piu' capiente.
+
+    Conteggio delle mancate convergenze su questo blocco. Va letto in modo
+    diverso sulle due famiglie. Sui modelli a margine segnala una stima troncata
+    dal tetto alle iterazioni, cioe' un punteggio non confrontabile. Sulla rete
+    segnala che l'ottimizzazione ha raggiunto il numero di iterazioni previsto,
+    che qui e' il meccanismo voluto e non un difetto: il numero di iterazioni e'
+    un iperparametro in griglia e il criterio di arresto interno non e'
+    operativo su questa scala, quindi l'avviso compare su quasi ogni
+    configurazione della rete e non porta informazione.
+
 Chiusura della catena di estensioni
     Un'estensione che sposta il modello di meno della dispersione fra fold ha
     raggiunto la regione in cui il protocollo non distingue: la regola di
@@ -231,7 +399,9 @@ from sklearn.ensemble import (
     RandomForestRegressor,
 )
 from sklearn.linear_model import ElasticNet, Lasso, LinearRegression, Ridge
+from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
+from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
 
@@ -330,6 +500,48 @@ ADABOOST_MAX_DEPTHS = [2, 3, 4, 5, 6]
 BOOSTING_N_ESTIMATORS = [100, 300, 600]
 BOOSTING_LEARNING_RATES = [0.01, 0.05, 0.1]
 BOOSTING_MAX_DEPTHS = [2, 3, 5, 8]
+
+# Griglie del blocco dei metodi a margine e delle reti.
+#
+# Tetto alle iterazioni della stima a margine, sopra il fabbisogno delle
+# configurazioni che convergono regolarmente e sotto quello delle configurazioni
+# mal condizionate. Le stime troncate restano riconoscibili dal conteggio delle
+# mancate convergenze.
+SVR_MAX_ITER = 20_000_000
+
+# Penalizzazione. Gli assi sono per modello e non condivisi, perche' i bordi
+# toccati alla prima esecuzione sono opposti fra le varianti di kernel.
+SVR_C_LINEAR = [0.01, 0.1, 1.0, 10.0, 100.0]
+SVR_C_RBF = [0.1, 1.0, 10.0, 100.0, 1000.0]
+SVR_C_POLY = [0.01, 0.1, 1.0, 10.0, 100.0]
+
+# Banda dell'insensibilita' in cicli, che e' l'unita' del target. Copre da mezzo
+# ciclo, dove quasi ogni riga diventa vettore di supporto, a sedici, dove ne
+# resta fuori piu' della meta'. L'asse esteso a 32 e' quello delle due varianti
+# che hanno selezionato il massimo; sulla radiale il minimo e' interno.
+SVR_EPSILON = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
+SVR_EPSILON_WIDE = [0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0]
+
+# Ampiezza del kernel radiale, due ordini di grandezza attorno all'inverso del
+# numero di colonne, che e' il valore predefinito della libreria su dati
+# standardizzati.
+RBF_GAMMA = [0.005, 0.015, 0.05, 0.15, 0.5]
+
+# Ampiezza del kernel polinomiale, che si ferma all'inverso del numero di
+# colonne per la ragione numerica descritta sopra.
+POLY_KERNEL_GAMMA = [0.002, 0.006, 0.02, 0.06]
+
+# Grado del kernel polinomiale, fissato come nel laboratorio e non cercato.
+POLY_KERNEL_DEGREE = 3
+
+# Seme della rete. E' distinto dai semi del protocollo, che governano il
+# partizionamento: questo riguarda l'inizializzazione dei pesi e l'ordine dei
+# lotti, non quali motori finiscono da che parte.
+NETWORK_SEED = 0
+
+MLP_HIDDEN_LAYER_SIZES = [(8,), (16,), (32,), (32, 16), (64,), (64, 32), (128, 64)]
+MLP_LEARNING_RATES = [3e-5, 1e-4, 3e-4, 1e-3, 3e-3]
+MLP_MAX_ITERS = [100, 250, 500, 1000, 2000]
 
 
 @dataclass(frozen=True)
@@ -607,5 +819,83 @@ TREE_MODELS: dict[str, ModelSpec] = {
         reader=impurity_importances,
         note="stessa griglia del gradient boosting di scikit-learn, con la "
         "regolarizzazione predefinita della libreria non azzerata",
+    ),
+}
+
+
+def svr_estimator(kernel: str) -> SVR:
+    """Regressore a vettori di supporto con il tetto alle iterazioni del blocco.
+
+    Il tetto e' lo stesso per i tre kernel: una protezione applicata a un solo
+    modello introdurrebbe una differenza di condizioni dentro la stessa
+    famiglia.
+    """
+    if kernel == "poly":
+        return SVR(kernel="poly", degree=POLY_KERNEL_DEGREE, max_iter=SVR_MAX_ITER)
+    return SVR(kernel=kernel, max_iter=SVR_MAX_ITER)
+
+
+def mlp_estimator() -> MLPRegressor:
+    """Percettrone multistrato nella configurazione fissa del blocco.
+
+    Funzione di attivazione, ottimizzatore e disattivazione dell'arresto
+    anticipato sono fissati: i primi due sono quelli del laboratorio, il terzo e'
+    imposto dal vincolo di gruppo del protocollo. Cio' che varia sta in griglia.
+    """
+    return MLPRegressor(
+        activation="relu",
+        solver="adam",
+        early_stopping=False,
+        random_state=NETWORK_SEED,
+    )
+
+
+KERNEL_MODELS: dict[str, ModelSpec] = {
+    "svr_linear": ModelSpec(
+        key="svr_linear",
+        label="SVR, kernel lineare",
+        estimator=svr_estimator("linear"),
+        grid={"model__C": SVR_C_LINEAR, "model__epsilon": SVR_EPSILON_WIDE},
+        reader=linear_coefficients,
+        note="unico modello del blocco con coefficienti leggibili, perche' la "
+        "funzione stimata resta lineare nelle variabili",
+    ),
+    "svr_rbf": ModelSpec(
+        key="svr_rbf",
+        label="SVR, kernel radiale",
+        estimator=svr_estimator("rbf"),
+        grid={
+            "model__C": SVR_C_RBF,
+            "model__epsilon": SVR_EPSILON,
+            "model__gamma": RBF_GAMMA,
+        },
+        note="ampiezza del kernel su due ordini di grandezza attorno al valore "
+        "predefinito della libreria",
+    ),
+    "svr_poly": ModelSpec(
+        key="svr_poly",
+        label="SVR, kernel polinomiale",
+        estimator=svr_estimator("poly"),
+        grid={
+            "model__C": SVR_C_POLY,
+            "model__epsilon": SVR_EPSILON_WIDE,
+            "model__gamma": POLY_KERNEL_GAMMA,
+        },
+        note="grado fissato a 3 come nel laboratorio, ampiezza limitata "
+        "all'inverso del numero di colonne per il condizionamento della stima",
+    ),
+    "mlp": ModelSpec(
+        key="mlp",
+        label="Percettrone multistrato",
+        estimator=mlp_estimator(),
+        grid={
+            "model__hidden_layer_sizes": MLP_HIDDEN_LAYER_SIZES,
+            "model__learning_rate_init": MLP_LEARNING_RATES,
+            "model__max_iter": MLP_MAX_ITERS,
+        },
+        note="numero di iterazioni in griglia perche' governa un compromesso e "
+        "non la precisione di una media, arresto anticipato disattivato; il "
+        "conteggio delle mancate convergenze segnala qui l'arresto previsto e "
+        "non una stima difettosa",
     ),
 }

@@ -1,0 +1,9 @@
+sottoinsieme,model,n_configurations,boundary,failed_configurations,convergence_warnings,n_support,support_share,n_parameters,stopped_at_max_iter,search_seconds
+FD001,svr_linear,35,model__C=minimo,0,0,9174.0,0.4446706412679947,,,270.25189954205416
+FD001,svr_rbf,150,,0,0,10073.0,0.4882458436333672,,,5195.363668999984
+FD001,svr_poly,140,model__gamma=massimo,0,0,10776.0,0.5223207794096263,,,1089.999470916926
+FD001,mlp,175,,0,0,,,321.0,False,2138.452491208911
+FD003,svr_linear,35,model__C=minimo,0,0,15933.0,0.6445388349514564,,,645.6265819169348
+FD003,svr_rbf,150,,0,0,12789.0,0.5173543689320388,,,10504.322103166953
+FD003,svr_poly,140,model__gamma=massimo,0,0,13424.0,0.543042071197411,,,1561.9065846248996
+FD003,mlp,175,model__hidden_layer_sizes=massimo,0,1,,,10881.0,True,2096.7402781249257

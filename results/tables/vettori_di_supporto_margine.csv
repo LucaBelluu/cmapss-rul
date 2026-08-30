@@ -1,0 +1,7 @@
+sottoinsieme,modello,banda_selezionata,vettori_di_supporto,quota_vettori_di_supporto,iterazioni_stima
+FD001,"SVR, kernel lineare",16.0,9174,0.4446706412679947,5439
+FD001,"SVR, kernel radiale",8.0,10073,0.4882458436333672,68687
+FD001,"SVR, kernel polinomiale",16.0,10776,0.5223207794096263,337406
+FD003,"SVR, kernel lineare",8.0,15933,0.6445388349514564,9142
+FD003,"SVR, kernel radiale",4.0,12789,0.5173543689320388,20110
+FD003,"SVR, kernel polinomiale",16.0,13424,0.543042071197411,9938
