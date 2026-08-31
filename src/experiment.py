@@ -358,22 +358,40 @@ def coefficient_path(estimator_factory, values, X, y, feature_names, param: str 
     return pd.DataFrame(records)
 
 
+def gap_in_dispersions(mean: pd.Series, std: pd.Series) -> pd.Series:
+    """Distanza dalla riga migliore in unita' di dispersione fra fold.
+
+    Attende le due colonne gia' ordinate sulla metrica di riferimento: la riga
+    migliore e' la prima. Due modelli il cui divario e' inferiore a una
+    dispersione non sono distinguibili sotto questo protocollo, e la quantita'
+    rende leggibile questa condizione invece di lasciarla dedurre dal confronto
+    fra medie e deviazioni standard.
+
+    La dispersione usata come scala combina quella della riga e quella della
+    riga migliore, e non e' quella della sola riga: dividendo ciascun divario
+    per la propria dispersione, un modello peggiore ma piu' stabile
+    risulterebbe molto piu' vicino di uno migliore e piu' variabile. La scala
+    combinata attenua l'effetto ma non lo annulla, e la colonna non e' quindi
+    monotona nell'errore: fra righe di dispersione molto diversa puo' invertire
+    l'ordine, come accade fra la baseline sul solo numero di ciclo e il modello
+    peggiore del confronto. L'ordinamento e' quello della colonna dell'errore;
+    questa e' una distanza, non un ordine.
+
+    Non e' un errore standard e non consente test di significativita': i fold
+    condividono le righe di addestramento e non sono indipendenti.
+    """
+    best_mean = mean.iloc[0]
+    best_std = std.iloc[0]
+    scale = np.sqrt((std**2 + best_std**2) / 2.0).replace(0.0, np.nan)
+    return ((mean - best_mean) / scale).round(2)
+
+
 def comparison_table(runs: list[ModelRun]) -> pd.DataFrame:
     """Tabella di confronto del blocco, ordinata sulla metrica di riferimento.
 
     La colonna `divario_in_dispersioni` riporta la distanza dalla riga migliore
-    in unita' di dispersione fra fold. Due modelli il cui divario e' inferiore
-    a una dispersione non sono distinguibili sotto questo protocollo, e la
-    colonna rende leggibile questa condizione invece di lasciarla dedurre dal
-    confronto fra medie e deviazioni standard.
-
-    La dispersione usata come scala combina quella della riga e quella della
-    riga migliore, e non e' quella della sola riga: dividendo ciascun divario
-    per la propria dispersione l'ordinamento della colonna non seguirebbe
-    quello dell'errore, perche' un modello peggiore ma piu' stabile
-    risulterebbe piu' vicino di uno migliore e piu' variabile. La quantita' non
-    e' un errore standard e non consente test di significativita': i fold
-    condividono le righe di addestramento.
+    in unita' di dispersione fra fold, con la definizione di
+    `gap_in_dispersions`.
     """
     table = pd.DataFrame([run.summary for run in runs])
     columns = [
@@ -396,13 +414,10 @@ def comparison_table(runs: list[ModelRun]) -> pd.DataFrame:
     table = table[[c for c in columns if c in table.columns]]
     table = table.sort_values("rmse_mean").reset_index(drop=True)
 
-    best_mean = table["rmse_mean"].iloc[0]
-    best_std = table["rmse_std"].iloc[0]
-    scale = np.sqrt((table["rmse_std"] ** 2 + best_std**2) / 2.0).replace(0.0, np.nan)
     table.insert(
         table.columns.get_loc("rmse_std") + 1,
         "divario_in_dispersioni",
-        ((table["rmse_mean"] - best_mean) / scale).round(2),
+        gap_in_dispersions(table["rmse_mean"], table["rmse_std"]),
     )
     return table
 

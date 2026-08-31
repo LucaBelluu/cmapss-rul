@@ -2102,3 +2102,174 @@ per l'analisi. Otto figure e nove tabelle in `results/`.
 
 ESITO: quarto e ultimo blocco del confronto concluso. L'insieme di verifica ufficiale non e' stato
 letto in nessuna fase del blocco.
+
+## [31-08-2026] — Chiusura del confronto: graduatoria complessiva sui quattro blocchi
+
+### Perdita e recupero degli artefatti del blocco lineare su FD001
+
+Sintomo: la prima composizione della graduatoria complessiva mostrava, su FD001, una sola riga
+del blocco lineare (la regressione lineare multipla) contro le dieci di FD003.
+
+Causa radice: una riesecuzione parziale dello script del blocco lineare sul solo FD001, limitata
+a un sottoinsieme dei modelli, ha riscritto `FD001_comparison.csv` e `FD001_cv_folds.csv` con le
+sole righe prodotte in quel passaggio. `FD001_selection_history.csv` e gli altri artefatti non
+prodotti da quella esecuzione sono sopravvissuti, quindi l'elenco dei file della cartella
+appariva completo e l'incoerenza non era visibile guardando la directory. Gli artefatti non sono
+versionati, e una sovrascrittura non lascia quindi traccia nella cronologia: il difetto è stato
+intercettato dalla composizione della graduatoria e non da un controllo di integrità dei file.
+
+Soluzione: riesecuzione completa del blocco lineare su FD001, con l'elenco intero dei modelli e
+il controllo diagnostico con selezione annidata.
+
+ESITO: i valori rigenerati coincidono con quelli registrati il 26-08 su tutte e otto le righe del
+blocco e su tutte le configurazioni selezionate. Ridge alpha=1000 a 20,327 ± 1,137, Elastic Net
+alpha=0,08685 e bilanciamento 0,05 a 20,329 ± 1,125, i tre metodi di selezione a k=17 con
+20,345 ± 1,183, Lasso alpha=0,02812 a 20,345 ± 1,182, regressione lineare multipla a
+20,345 ± 1,183, componenti principali con sei componenti a 20,353 ± 1,173. Il controllo con
+selezione annidata restituisce 20,35 contro i 20,34 riportati in tabella, con cardinalità
+selezionate nei fold pari a 15, 16 e 17. La riproduzione a cinque giorni di distanza, su una
+catena nel frattempo modificata da tre blocchi successivi, è la verifica che la riproducibilità
+dichiarata è effettiva e non asserita.
+
+### Verifica di identità delle partizioni fra blocchi
+
+Comporre in un'unica graduatoria quattro tabelle prodotte da esecuzioni diverse presuppone che i
+punteggi siano stati calcolati sugli stessi motori e sulle stesse righe. Il presupposto non è
+garantito dall'unicità del codice del protocollo: una modifica alla catena dati fra
+un'esecuzione e l'altra basterebbe a invalidarlo.
+
+La verifica è possibile perché le due baseline sono ricalcolate in ogni blocco, e ogni blocco
+contiene quindi una misura indipendente della stessa quantità sulle stesse partizioni. Il
+confronto dei conteggi di righe e di motori di ciascun fold è la firma della partizione;
+l'uguaglianza dei punteggi la corrobora. La verifica precede la graduatoria e la blocca in caso
+di scostamento, invece di accompagnarla con una nota.
+
+ESITO: scarto nullo su tutti e otto i confronti per sottoinsieme, conteggi identici. I quattro
+blocchi sono componibili.
+
+### Graduatoria complessiva
+
+Errore quadratico medio in cross-validation, media e deviazione standard sulle 15 partizioni di
+confronto. Le configurazioni selezionate sono registrate nelle voci dei rispettivi blocchi.
+
+| Modello | Blocco | FD001 | FD003 |
+|---|---|---|---|
+| Percettrone multistrato | Margine e reti | 16,58 ± 1,40 | 14,04 ± 1,06 |
+| Foresta casuale | Albero | 16,59 ± 1,46 | 14,70 ± 1,21 |
+| XGBoost | Albero | 16,70 ± 1,36 | 14,56 ± 1,11 |
+| Gradient boosting | Albero | 16,71 ± 1,37 | 14,58 ± 1,14 |
+| Bagging di alberi | Albero | 16,89 ± 1,44 | 14,94 ± 1,11 |
+| SVR, kernel radiale | Margine e reti | 16,96 ± 1,41 | 14,68 ± 1,37 |
+| AdaBoost | Albero | 16,97 ± 1,27 | 15,52 ± 1,18 |
+| Modello additivo generalizzato | Non lineare | 17,46 ± 1,21 | 15,95 ± 1,09 |
+| Regression spline | Non lineare | 17,47 ± 1,19 | 15,91 ± 1,10 |
+| Step functions | Non lineare | 17,69 ± 1,20 | 16,10 ± 1,08 |
+| Regressione polinomiale | Non lineare | 17,75 ± 1,28 | 16,44 ± 1,02 |
+| Albero di regressione potato | Albero | 18,48 ± 1,27 | 16,87 ± 1,13 |
+| SVR, kernel lineare | Margine e reti | 20,32 ± 1,12 | 19,83 ± 1,52 |
+| Ridge | Lineare | 20,33 ± 1,14 | 19,88 ± 1,45 |
+| Elastic Net | Lineare | 20,33 ± 1,13 | 19,89 ± 1,45 |
+| Best subset, forward, backward | Lineare | 20,34 ± 1,18 | 19,85 ± 1,45 |
+| Lasso | Lineare | 20,35 ± 1,18 | 19,92 ± 1,46 |
+| Regressione lineare multipla | Lineare | 20,35 ± 1,18 | 19,93 ± 1,46 |
+| Componenti principali | Lineare | 20,35 ± 1,17 | 19,93 ± 1,46 |
+| SVR, kernel polinomiale | Margine e reti | 23,35 ± 0,93 | 26,34 ± 2,67 |
+| Baseline sul solo numero di ciclo | | 27,88 ± 2,47 | 35,12 ± 2,64 |
+| Predizione costante | | 41,69 ± 0,14 | 40,73 ± 0,65 |
+
+Lettura. Il percettrone multistrato è primo su entrambi i sottoinsiemi, ma il primo posto ha
+significato diverso nei due casi. Su FD001 sette modelli stanno entro 0,39 cicli, cioè entro un
+terzo della dispersione minima fra fold della tabella: la graduatoria individua un gruppo di
+testa e non un vincitore, e la scelta fra quei sette non è decidibile sotto questo protocollo. Su
+FD003 il gruppo di testa è più stretto, con la rete davanti a XGBoost di 0,52 cicli contro
+dispersioni di 1,06 e 1,11, e la regola di lettura del progetto continua a non separarli.
+
+La struttura per famiglie è invece netta e si ripete identica sui due sottoinsiemi, in tre
+gradini: i modelli lineari attorno a 20 cicli, i modelli non lineari additivi fra 15,9 e 17,8,
+gli insiemi di alberi con il kernel radiale e la rete in cima. All'interno del blocco lineare
+tutti i modelli, dalla regressione senza penalizzazione alla ricerca esaustiva su 262.143
+sottoinsiemi, restano entro 0,03 cicli su FD001 e 0,09 su FD003: la penalizzazione e la selezione
+delle variabili non hanno niente da recuperare su questa matrice, ed è la classe di funzioni a
+essere il limite.
+
+Cautele di lettura. I punteggi sono ottimisticamente distorti perché la cross-validation non è
+annidata, e la distorsione non è uniforme fra le righe: il numero di configurazioni valutate sulle
+stesse partizioni su cui il punteggio è poi riportato varia da 1 a 524.287 lungo la tabella. La
+riga della ricerca esaustiva è quella più esposta, ed è anche quella per cui il controllo con
+selezione annidata ha misurato lo scarto (0,01 cicli su FD001, 0,27 su FD003). La riga della rete
+è stimata con un solo seme di inizializzazione dei pesi e la sua dispersione non contiene la
+variabilità dovuta all'inizializzazione.
+
+### Confronto appaiato fold per fold
+
+Le 15 partizioni sono le stesse per tutti i modelli e per tutti i blocchi, quindi la differenza
+fra due modelli si può calcolare fold per fold anziché confrontando due medie con le rispettive
+dispersioni. La difficoltà del fold, che è la componente dominante della dispersione riportata in
+tabella, è comune ai due modelli e si elide nella differenza. La media delle differenze coincide
+per costruzione con la differenza delle medie: l'informazione aggiuntiva sta nella dispersione
+della differenza e nella concordanza del segno.
+
+La lettura è fuori dal materiale del corso ed è dichiarata tale. Resta descrittiva: non viene
+prodotta alcuna statistica test, e il rapporto fra media e dispersione della differenza non è
+convertibile in un livello di significatività, perché i 15 fold condividono le righe di
+addestramento e non sono osservazioni indipendenti. La regola di lettura fissata dal protocollo
+resta quella principale e questa non la sostituisce.
+
+Su FD001 il divario fra la rete e la foresta casuale vale 0,014 ± 0,223 cicli, con la rete
+peggiore in 11 fold su 15: il segno non è nemmeno stabile, e il primo posto è un pareggio pieno.
+Su FD003 il divario fra la rete e XGBoost vale 0,515 ± 0,451 con lo stesso segno in 13 fold su
+15. La dispersione della differenza è meno della metà di quella dei singoli punteggi, e la
+formulazione corretta è che il divario resta sotto la soglia di leggibilità fissata dal
+protocollo ma non è distribuito a caso fra i fold. Le due affermazioni convivono e vanno
+riportate entrambe.
+
+### Regola di lettura dell'insieme di verifica ufficiale
+
+Fissata qui, prima che esista il codice che quell'insieme lo legge, e non modificabile dopo.
+
+La graduatoria del progetto è quella in cross-validation riportata sopra. L'insieme di verifica
+ufficiale serve a misurare il trasferimento fuori campione e non riordina la graduatoria: ha un
+solo punteggio per modello, senza misura di variabilità, e ordinare su di esso significherebbe
+ordinare su un numero di cui non si conosce l'incertezza.
+
+Vengono letti tutti i modelli selezionati e le due baseline, non i soli migliori, così che il
+confronto fuori campione sia disponibile per l'intera tabella e non per la parte che conviene.
+
+Le tre letture prodotte (tutti i cicli delle traiettorie troncate, solo ultimo ciclo, ultimo ciclo
+contro target non censurato) non sono confrontabili fra loro né con l'errore in cross-validation,
+perché riguardano popolazioni di cicli diverse.
+
+Va inoltre dichiarato che l'insieme di verifica non è rimasto del tutto intatto fino a questo
+punto: nella voce del 26-08, in fase di convalida del protocollo, è stato letto per le due
+baseline e per la regressione lineare multipla. Quella lettura riguardava modelli senza
+iperparametri e non ha condizionato alcuna scelta, ma l'affermazione "letto una sola volta"
+presente nei docstring va intesa nel senso che non entra in nessuna selezione, non nel senso
+letterale.
+
+### CORREZIONE: significato della colonna del divario in dispersioni
+
+Il commento alla colonna `divario_in_dispersioni` affermava che la scala combinata fra la
+dispersione della riga e quella della riga migliore serve a far seguire alla colonna
+l'ordinamento dell'errore. L'affermazione è falsa e i dati della graduatoria la smentiscono: su
+FD001 la baseline sul solo numero di ciclo ha errore 27,88 e divario 5,64, mentre il kernel
+polinomiale ha errore 23,35 e divario 5,72. La baseline è peggiore e risulta più vicina, perché
+la sua dispersione vale 2,47 contro 0,93. La scala combinata attenua la distorsione rispetto
+all'uso della sola dispersione di riga, ma non la elimina.
+
+La definizione della colonna non cambia: la quantità è quella giusta, cioè una distanza in unità
+di dispersione condivisa fra le due righe confrontate, e modificarla imporrebbe di rigenerare
+tutte le tabelle dei quattro blocchi. Cambia il commento: la colonna è una distanza e non un
+ordine, l'ordinamento è quello della colonna dell'errore, e fra righe di dispersione molto
+diversa la colonna può invertirlo. Il calcolo è stato estratto da `comparison_table` in una
+funzione dedicata, `gap_in_dispersions`, perché la graduatoria complessiva usa la stessa
+quantità e due definizioni separate potrebbero divergere senza che nulla lo segnali.
+
+### Artefatti
+
+`src/final.py` per la composizione dei blocchi, la verifica delle partizioni e il confronto
+appaiato; `scripts/run_final_ranking.py` per la produzione della graduatoria;
+`src/experiment.py` esteso con `gap_in_dispersions`. Gli artefatti prodotti stanno in
+`experiments/final/` e non sono versionati, come per tutti gli altri esperimenti.
+
+ESITO: graduatoria del confronto chiusa. L'insieme di verifica ufficiale non è stato letto in
+questa fase.
