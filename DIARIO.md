@@ -2273,3 +2273,89 @@ appaiato; `scripts/run_final_ranking.py` per la produzione della graduatoria;
 
 ESITO: graduatoria del confronto chiusa. L'insieme di verifica ufficiale non è stato letto in
 questa fase.
+
+## [31-08-2026] — Variabilità dei modelli stocastici al variare del seme dello stimatore
+
+Il primo posto della graduatoria è occupato su entrambi i sottoinsiemi da un modello con una
+componente casuale interna, e i modelli che lo seguono entro la soglia di leggibilità sono
+anch'essi stocastici. Il protocollo fissa un solo seme di stimatore per modello, uguale per
+tutti, quindi la dispersione riportata in graduatoria è quella fra le 15 partizioni e non
+contiene la variabilità dovuta al seme. Il limite era già dichiarato per la riga della rete nella
+voce del 30-08; con quella riga in testa alla graduatoria complessiva, dichiararlo non basta più.
+
+Motivo della misura: senza di essa non è possibile distinguere un primo posto che è proprietà del
+modello da uno che è proprietà dell'estrazione.
+
+Vincolo che la misura rispetta: il risultato è diagnostico e non entra in graduatoria, come il
+controllo con selezione annidata del blocco lineare. Cambiare la regola sui semi per i soli
+modelli stocastici romperebbe la parità del protocollo, che è il fondamento del confronto.
+
+Procedura: la configurazione selezionata di percettrone multistrato, foresta casuale e XGBoost
+viene rivalutata sulle stesse 15 partizioni con cinque semi di stimatore. Il primo seme è quello
+del protocollo e serve da controllo di fedeltà della ricostruzione: su tutte e sei le righe
+riproduce il punteggio in graduatoria con scarto nullo.
+
+Media dell'errore sulle 15 partizioni, dispersione fra i cinque semi ed escursione fra il
+migliore e il peggiore.
+
+| Sottoinsieme | Modello | Seme del protocollo | Media fra semi | Dispersione fra semi | Escursione |
+|---|---|---|---|---|---|
+| FD001 | Percettrone multistrato | 16,581 | 16,654 | 0,044 | 0,110 |
+| FD001 | Foresta casuale | 16,595 | 16,599 | 0,002 | 0,006 |
+| FD001 | XGBoost | 16,701 | 16,701 | 0,000 | 0,000 |
+| FD003 | Percettrone multistrato | 14,042 | 14,038 | 0,026 | 0,062 |
+| FD003 | XGBoost | 14,558 | 14,558 | 0,000 | 0,000 |
+| FD003 | Foresta casuale | 14,701 | 14,706 | 0,003 | 0,010 |
+
+Lettura, e i due sottoinsiemi danno esiti opposti.
+
+Su FD001 il primo posto non è determinato. Il divario fra rete e foresta casuale vale 0,014
+cicli, la dispersione fra semi della rete vale 0,044: il divario sta a un terzo del rumore di
+inizializzazione. Il seme del protocollo è inoltre quello che produce il valore migliore dei
+cinque, e sulla media fra semi l'ordine si inverte, con la rete a 16,654 contro i 16,599 della
+foresta casuale. Il seme è fissato dal protocollo per tutti i modelli e non è stato scelto
+guardando i risultati, quindi la graduatoria non è viziata; ma la conclusione difendibile su
+FD001 è che rete e foresta casuale non siano ordinabili, e che il primo posto della rete in
+tabella sia un effetto dell'estrazione.
+
+Su FD003 il primo posto regge. Il divario dalla rete a XGBoost vale 0,515 cicli contro una
+dispersione fra semi di 0,026, cioè venti volte tanto, e il seme del protocollo produce il valore
+mediano dei cinque e non il migliore. Il divario resta sotto la soglia di leggibilità fissata dal
+protocollo, che si misura sulla dispersione fra fold, ma non è attribuibile all'inizializzazione.
+
+La foresta casuale ha dispersione fra semi di uno o due ordini di grandezza inferiore a quella
+della rete. La media su 300 alberi assorbe la variabilità del campionamento delle righe e delle
+colonne, mentre la rete ha una sola stima e la sua inizializzazione entra per intero nel
+risultato.
+
+XGBoost ha dispersione esattamente nulla su entrambi i sottoinsiemi. Non è stabilità: la
+configurazione del registro lascia il campionamento delle righe e delle colonne ai valori
+predefiniti, che valgono uno, quindi non c'è alcuna sorgente di casualità e il seme è inerte. La
+riga di XGBoost nella tabella sopra non misura una variabilità bassa, misura l'assenza di
+variabilità da misurare, ed è un limite del diagnostico su quella riga e non un suo risultato.
+
+Osservazione sul criterio di arresto della rete, contata sugli avvisi emessi
+nell'esecuzione. Su FD003 il tetto di 250 iterazioni è raggiunto in tutti e 15 i fold per tutti e
+cinque i semi: su quel sottoinsieme il numero di iterazioni è la penalizzazione effettiva del
+modello e vincola sempre. Su FD001 il tetto di 1000 iterazioni è raggiunto in 3 casi su 75, tutti
+sui semi 1 e 2, e mai con il seme del protocollo: là il criterio di arresto interno interviene
+prima, come già registrato il 30-08 per la configurazione selezionata, che si ferma a 592
+iterazioni. Il comportamento dello stesso iperparametro è quindi diverso fra i due sottoinsiemi.
+
+### Artefatti
+
+`src/selected.py` ricostruisce i modelli selezionati dagli artefatti dei blocchi, rigenerando la
+griglia dal registro e cercando la combinazione la cui etichetta coincide con quella registrata
+nella tabella di confronto. La ricostruzione non legge i parametri dalle tabelle: i valori
+dell'etichetta sono arrotondati a quattro cifre significative e produrrebbero un modello diverso
+da quello valutato. La corrispondenza deve essere unica, e questo rende la ricostruzione anche un
+controllo di coerenza fra il registro nella repository e gli artefatti su disco. Risolve inoltre
+il caso di parità osservato su FD001, dove due combinazioni della griglia della rete hanno lo
+stesso punteggio fino alla quattordicesima cifra e la riga di rango primo nella tabella della
+griglia non identifica quella valutata.
+
+`scripts/run_seed_diagnostic.py` esegue la misura e deposita i risultati in `experiments/final/`.
+
+ESITO: la variabilità che il protocollo non cattura è misurata. Su FD001 supera di tre volte il
+divario fra i primi due modelli; su FD003 è venti volte più piccola del divario fra i primi due.
+L'insieme di verifica ufficiale non è stato letto in questa fase.
