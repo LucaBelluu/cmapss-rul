@@ -2359,3 +2359,433 @@ griglia non identifica quella valutata.
 ESITO: la variabilità che il protocollo non cattura è misurata. Su FD001 supera di tre volte il
 divario fra i primi due modelli; su FD003 è venti volte più piccola del divario fra i primi due.
 L'insieme di verifica ufficiale non è stato letto in questa fase.
+
+## [09-09-2026] — Lettura dell'insieme di verifica ufficiale
+
+I ventidue modelli selezionati e le due baseline sono stati riaddestrati
+sull'intera parte di addestramento di ciascun sottoinsieme e valutati una sola
+volta sull'insieme di verifica ufficiale, secondo la regola di lettura fissata
+prima che esistesse il codice che quell'insieme lo legge.
+
+### Controllo di fedeltà della catena
+
+Le due baseline e la regressione lineare multipla erano già state lette
+sull'insieme di verifica in fase di convalida del protocollo, il 26-08. Sono
+modelli deterministici e senza iperparametri, quindi i loro punteggi devono
+riprodursi: uno scostamento significherebbe che la catena dati è cambiata nel
+frattempo e nessuna delle altre righe sarebbe interpretabile. Il controllo è
+cablato nello script, precede la lettura dei risultati e blocca l'esecuzione in
+caso di scostamento, dopo aver scritto gli artefatti.
+
+ESITO: dodici valori confrontati su due sottoinsiemi, scarto massimo 0,005
+cicli, che è l'arrotondamento al centesimo con cui i valori erano stati
+registrati. La catena è la stessa a quattordici giorni di distanza.
+
+Nessun avviso di mancata convergenza sulle tre varianti di kernel della macchina
+a vettori di supporto, quindi nessuna stima troncata dal tetto alle iterazioni e
+nessun punteggio non confrontabile. L'unico avviso proviene dalla rete su FD003,
+che raggiunge il tetto di 250 iterazioni: è il comportamento previsto e già
+registrato il 30-08, non un difetto della stima.
+
+### Risultati
+
+Radice dell'errore quadratico medio. La colonna della cross-validation è la
+media sulle 15 partizioni; le tre letture della verifica sono valori singoli,
+senza misura di variabilità. Le quattro colonne riguardano popolazioni di cicli
+diverse e i loro valori non si sottraggono fra loro.
+
+| Modello | FD001 CV | FD001 tutti | FD001 ultimo | FD003 CV | FD003 tutti | FD003 ultimo |
+|---|---|---|---|---|---|---|
+| Percettrone multistrato | 16,58 | 15,52 | 16,72 | 14,04 | 12,65 | 16,01 |
+| Foresta casuale | 16,59 | 15,64 | 16,81 | 14,70 | 13,17 | 17,36 |
+| XGBoost | 16,70 | 15,66 | 16,58 | 14,56 | 12,92 | 16,26 |
+| Gradient boosting | 16,71 | 15,65 | 16,52 | 14,58 | 12,90 | 16,11 |
+| Bagging di alberi | 16,89 | 15,87 | 16,95 | 14,94 | 13,41 | 17,23 |
+| SVR, kernel radiale | 16,96 | 15,71 | 17,12 | 14,68 | 12,78 | 17,06 |
+| AdaBoost | 16,97 | 16,55 | 17,18 | 15,52 | 14,38 | 17,71 |
+| Modello additivo generalizzato | 17,46 | 16,41 | 17,15 | 15,95 | 14,54 | 17,56 |
+| Regression spline | 17,47 | 16,51 | 17,51 | 15,91 | 14,57 | 17,61 |
+| Step functions | 17,69 | 16,56 | 17,23 | 16,10 | 14,66 | 17,90 |
+| Regressione polinomiale | 17,75 | 17,46 | 18,48 | 16,44 | 14,24 | 17,74 |
+| Albero di regressione potato | 18,48 | 16,97 | 18,67 | 16,87 | 14,33 | 18,06 |
+| SVR, kernel lineare | 20,32 | 19,19 | 21,24 | 19,83 | 18,38 | 21,86 |
+| Ridge | 20,33 | 19,11 | 21,35 | 19,88 | 18,06 | 21,66 |
+| Elastic Net | 20,33 | 19,15 | 21,31 | 19,89 | 18,12 | 21,78 |
+| Best subset, forward, backward | 20,34 | 19,07 | 21,43 | 19,85 | 17,97 | 21,27 |
+| Lasso | 20,35 | 19,07 | 21,45 | 19,92 | 18,00 | 21,55 |
+| Regressione lineare multipla | 20,35 | 19,07 | 21,45 | 19,93 | 17,96 | 21,44 |
+| Componenti principali | 20,35 | 19,13 | 21,48 | 19,93 | 17,96 | 21,44 |
+| SVR, kernel polinomiale | 23,35 | 20,26 | 23,27 | 26,34 | 19,38 | 28,81 |
+| Baseline sul solo numero di ciclo | 27,88 | 23,69 | 32,25 | 35,12 | 26,03 | 36,80 |
+| Predizione costante | 41,69 | 35,34 | 41,94 | 40,73 | 31,37 | 43,70 |
+
+La terza lettura, sull'ultimo ciclo contro target non censurato, è negli
+artefatti e non in tabella: differisce dalla seconda di circa 1,2 cicli su ogni
+riga, quantità coerente con il numero ridotto di unità di verifica la cui vita
+residua supera la soglia, e non cambia alcun ordine.
+
+### Concordanza della graduatoria
+
+La correlazione di rango fra la graduatoria in cross-validation e le letture
+della verifica, calcolata sui ventidue modelli ed esclusa la coppia di baseline
+che è ultima in ogni lettura e gonfierebbe la misura, vale 0,89 su tutti i cicli
+e 0,98 sull'ultimo ciclo per FD001, 0,87 e 0,93 per FD003.
+
+Presi da soli quei numeri sono fuorvianti, perché la correlazione di rango
+impone un ordine anche fra righe che il protocollo dichiara non ordinabili. La
+misura corretta è il conteggio delle inversioni fra le sole coppie che la regola
+di lettura del progetto separa, cioè quelle il cui divario in cross-validation
+supera la dispersione combinata delle due righe. Sono 136 coppie su 231 in
+FD001 e 158 su 231 in FD003.
+
+| Lettura | FD001 | FD003 |
+|---|---|---|
+| Tutti i cicli | 0 inversioni su 136 | 1 su 158 |
+| Solo ultimo ciclo | 0 su 136 | 0 su 158 |
+| Ultimo ciclo non censurato | 0 su 136 | 1 su 158 |
+
+Le due inversioni valgono 0,05 cicli (AdaBoost e albero potato) e 0,01 cicli
+(foresta casuale e modello additivo). L'ordine che il protocollo dichiara
+leggibile si trasferisce quindi integralmente su una popolazione indipendente, e
+la correlazione di rango inferiore all'unità è prodotta da riordinamenti interni
+a gruppi già dichiarati indistinguibili.
+
+### Il vertice della graduatoria
+
+Su FD001 il primo posto cambia titolare a seconda della lettura: la rete sulla
+lettura estesa (15,52), il gradient boosting sull'ultimo ciclo (16,52), con
+XGBoost a 16,58, la rete a 16,72 e la foresta casuale a 16,81. Quattro modelli
+in 0,3 cicli. Il risultato coincide con quello del diagnostico sul seme dello
+stimatore, che aveva mostrato il primo posto della rete attribuibile
+all'estrazione: due misure indipendenti, la variabilità fra semi e il
+trasferimento fuori campione, portano alla stessa conclusione. Su FD001 il primo
+posto non è assegnabile.
+
+Su FD003 la rete è prima in tutte e tre le letture della verifica, come lo era
+in cross-validation e come il diagnostico sul seme aveva mostrato non
+attribuibile all'inizializzazione. Anche qui le due misure concordano, nella
+direzione opposta.
+
+La struttura per famiglie è ciò che regge senza riserve: i tre gradini si
+ripetono identici sui due sottoinsiemi e in tutte le letture, e i divari fra
+gradini sono di ordine di grandezza superiore alle distinzioni interne.
+
+### Comportamenti che il trasferimento fa emergere
+
+La macchina a vettori di supporto con kernel lineare è la migliore del gradino
+lineare in cross-validation su entrambi i sottoinsiemi ed è la peggiore del
+gradino in tutte e sei le letture della verifica. Il segno è costante su sei
+misure, quindi non è casuale, ma le ampiezze restano sotto la soglia di
+leggibilità e il progetto non ordina quelle righe. La configurazione selezionata
+ha la penalizzazione minima della griglia e banda di insensibilità di 16 cicli
+su FD001 e 8 su FD003: è un modello che non penalizza gli errori sotto quella
+soglia, e l'insieme di verifica ha una quota di righe al valore di censura molto
+più alta di quella dell'addestramento. Un legame fra le due cose è plausibile ma
+non è stato misurato, e resta un'ipotesi.
+
+Su FD003, e solo nella lettura estesa, la regressione polinomiale e l'albero
+potato guadagnano quattro posizioni ciascuno e superano i modelli additivi.
+L'effetto scompare sull'ultimo ciclo, quindi riguarda la parte iniziale delle
+traiettorie, dove il target è appiattito sulla soglia, e non la fase di degrado.
+
+### Cautele di lettura
+
+L'errore sulla verifica è più basso di quello in cross-validation su ogni riga
+della tabella. Non è un trasferimento migliore: è la composizione della
+popolazione, già misurata il 26-08 sulla regressione lineare. Le traiettorie di
+verifica sono troncate in un punto casuale e contengono in proporzione molte più
+righe della fase iniziale di vita, dove il target è appiattito sulla soglia; la
+deviazione standard del target scende da 41,67 a 27,58 su FD001 e da 40,63 a
+24,84 su FD003. Il coefficiente di determinazione si muove nella direzione
+attesa e scende.
+
+Ogni lettura della verifica è un valore singolo, privo di misura di variabilità.
+La graduatoria del progetto resta quella in cross-validation e non viene
+riordinata: le colonne di rango negli artefatti affiancano le posizioni senza
+cambiare l'ordine della tabella.
+
+Il conteggio delle inversioni fra coppie separate è una lettura fuori dal
+materiale del corso ed è descrittiva: non produce alcuna statistica test.
+
+### Artefatti
+
+`scripts/run_holdout.py`. Produce in `experiments/final/`, per ciascun
+sottoinsieme, la tabella delle tre letture, le predizioni su ogni riga di
+verifica in forma lunga e la concordanza di rango. Le esecuzioni parziali non
+scrivono su disco, per evitare la sovrascrittura di una tabella completa con un
+sottoinsieme di righe già osservata sugli artefatti del blocco lineare.
+
+ESITO: l'insieme di verifica ufficiale è stato letto una volta su tutti i
+modelli selezionati e sulle due baseline. L'ordine che il protocollo dichiara
+leggibile si trasferisce integralmente fuori campione su entrambi i
+sottoinsiemi.
+
+## [09-09-2026] — Controllo di sensibilità alla soglia di censura
+
+La censura del target a 125 cicli è un'ipotesi di modellazione fissata a priori e
+i valori assoluti di tutte le metriche dipendono da essa. Il controllo misura se
+ne dipenda anche l'ordine fra le famiglie di modelli.
+
+### Impostazione
+
+Un modello per famiglia, rivalutato sulle stesse 15 partizioni con la censura
+disattivata: Ridge per i modelli lineari, il modello additivo generalizzato per i
+modelli non lineari additivi, la foresta casuale per la famiglia ad albero, il
+percettrone multistrato per i metodi a margine e le reti. Sono, in ciascuna
+famiglia, la riga meglio piazzata su FD001, e sono gli stessi sui due
+sottoinsiemi perché le due repliche restino confrontabili.
+
+Il perimetro è più ampio di quello annunciato quando la soglia è stata fissata,
+che prevedeva il solo modello migliore e la baseline lineare regolarizzata. Un
+modello per famiglia costa quattro rivalutazioni invece di due e permette di
+verificare la struttura per gradini, che è il risultato che il confronto
+consegna, invece del solo primo posto.
+
+Le due baseline entrano nel controllo insieme ai modelli. Sotto censura
+disattivata la predizione costante restituisce la deviazione standard del target
+non censurato, che è la scala su cui vanno letti gli errori di quel regime.
+
+La configurazione degli iperparametri resta quella selezionata sotto censura e la
+ricerca non viene rifatta. Motivo: rifarla equivarrebbe a condurre un secondo
+confronto completo su una diversa definizione del target, che è stato scartato
+per costo quando la definizione è stata fissata.
+
+Limite che ne consegue, e che rende la lettura a senso unico: ogni configurazione
+è stata scelta per un target di scala diversa da quello su cui viene qui
+valutata, quindi una famiglia il cui ottimo si sposta molto risulta
+svantaggiata. Se l'ordine regge nonostante questo il risultato è solido; se si
+invertisse, non se ne potrebbe concludere che la famiglia è peggiore sotto target
+non censurato.
+
+Il regime censurato ripete una misura già in graduatoria e la riproduce con
+scarto nullo su tutte e dodici le righe (il massimo osservato è 1,78·10⁻¹⁵ sul
+modello additivo di FD003, cioè precisione macchina). La differenza fra i due
+regimi è quindi attribuibile alla sola definizione del target.
+
+### Risultati
+
+Il target non censurato ha una scala diversa da quello censurato: su FD001 arriva
+a 361 cicli con dispersione 68,88 contro 41,67, su FD003 a 524 cicli con
+dispersione 98,85 contro 40,63. Gli errori dei due regimi non sono quindi
+confrontabili in valore assoluto e la sola quantità trasferibile è l'ordine
+dentro ciascun regime.
+
+FD001, radice dell'errore quadratico medio sulle 15 partizioni.
+
+| Modello | Censurato | Non censurato |
+|---|---|---|
+| Percettrone multistrato | 16,58 ± 1,40 | 37,14 ± 5,68 |
+| Foresta casuale | 16,59 ± 1,46 | 37,20 ± 6,21 |
+| Modello additivo generalizzato | 17,46 ± 1,21 | 37,18 ± 5,84 |
+| Ridge | 20,33 ± 1,14 | 40,80 ± 5,52 |
+| Baseline sul solo numero di ciclo | 27,88 ± 2,47 | 46,50 ± 7,56 |
+| Predizione costante | 41,69 ± 0,14 | 68,73 ± 4,31 |
+
+FD003.
+
+| Modello | Censurato | Non censurato |
+|---|---|---|
+| Percettrone multistrato | 14,04 ± 1,06 | 56,56 ± 10,26 |
+| Foresta casuale | 14,70 ± 1,22 | 58,08 ± 10,48 |
+| Modello additivo generalizzato | 15,95 ± 1,09 | 60,04 ± 12,14 |
+| Ridge | 19,88 ± 1,45 | 62,03 ± 11,46 |
+| Baseline sul solo numero di ciclo | 35,12 ± 2,64 | 85,80 ± 17,82 |
+| Predizione costante | 40,73 ± 0,65 | 97,32 ± 14,94 |
+
+### Lettura
+
+L'ordine regge. Su FD003 le quattro righe sono nello stesso ordine nei due
+regimi. Su FD001 foresta casuale e modello additivo si scambiano, ma nel regime
+censurato distano 0,87 cicli contro una dispersione combinata di 1,34, cioè sono
+due righe che il protocollo già non ordina: lo scambio non inverte un ordine
+leggibile. Ridge resta ultima fra i modelli in entrambi i regimi e su entrambi i
+sottoinsiemi, quindi la separazione fra il gradino lineare e gli altri non
+dipende dalla soglia.
+
+Il risultato più informativo non riguarda però l'ordine ma la dispersione.
+Togliendo la censura la dispersione fra fold passa da 1,1-1,5 a 5,5-6,2 cicli su
+FD001 e da 1,0-1,4 a 10,3-12,1 su FD003, mentre il divario fra Ridge e la rete
+resta quasi invariato in cicli: 3,75 contro 3,66 su FD001, 5,84 contro 5,47 su
+FD003. Misurato nell'unità del protocollo, cioè in dispersioni combinate, quel
+divario passa da 2,94 a 0,65 su FD001 e da 4,61 a 0,50 su FD003.
+
+Nel regime non censurato la regola di lettura del progetto non separa quindi più
+nessuna coppia fra i quattro modelli, compresa quella che divide la famiglia
+lineare dalle altre. La censura non sposta i modelli: cambia la risoluzione con
+cui il confronto li distingue. È un argomento a favore della soglia indipendente
+da quello con cui era stata fissata, e non è circolare: abbassare la soglia
+riduce l'errore per costruzione, ma nulla nella costruzione impone che aumenti
+anche il rapporto fra i divari e la dispersione fra fold.
+
+L'incremento di errore prodotto dalla rimozione della soglia è comune alle righe:
+da 19,7 a 20,6 cicli su FD001 e da 42,1 a 44,1 su FD003, sulle quattro famiglie e
+sulle due baseline. È la misura diretta dell'affermazione con cui la censura era
+stata motivata, cioè che la parte di target rimossa dalla soglia contiene una
+componente che nessuna classe di funzioni riduce.
+
+Il tetto di iterazioni della rete su FD003 vincola in 15 stime su 15 in entrambi i
+regimi, quindi non è un effetto del target non censurato: era già la regola di
+arresto operativa sotto censura, come registrato il 31-08. Su FD001 non compare
+alcun avviso in nessuno dei due regimi.
+
+### Limiti
+
+Il controllo riguarda quattro modelli su ventidue e una sola soglia alternativa,
+che è l'assenza di soglia. Non dice nulla sul comportamento a soglie intermedie.
+
+Le configurazioni sono congelate, quindi il regime non censurato è valutato con
+iperparametri scelti per un target di scala diversa.
+
+Nel regime non censurato nessuna coppia è separabile sotto la regola di lettura
+del progetto: l'affermazione difendibile riguarda la concordanza dell'ordine e il
+segno dei divari, non la loro leggibilità.
+
+### Artefatti
+
+`scripts/run_censoring_sensitivity.py`. Produce in `experiments/final/`, per
+ciascun sottoinsieme, le metriche per partizione nei due regimi e la tabella con
+media, dispersione e posizione dentro ciascun regime. L'insieme di verifica
+ufficiale non viene letto.
+
+ESITO: l'ordine fra famiglie non dipende dalla soglia di censura. La soglia
+determina la risoluzione del confronto, non la sua conclusione.
+
+## [09-09-2026] — Raggruppamento delle traiettorie con i metodi non supervisionati
+
+FD001 e FD003 differiscono per il solo numero di modi di guasto, uno contro due,
+e il confronto fra modelli mostra su FD003 traiettorie più lunghe, dispersione
+delle durate quasi doppia e punteggi migliori. Ho applicato i metodi del
+laboratorio 12 per stabilire se quella differenza sia visibile nella forma delle
+traiettorie guardandole senza il target, cioè se un metodo non supervisionato
+trovi su FD003 una struttura di gruppi che su FD001 non esiste.
+
+Il risultato è strumento di commento e non è una riga del confronto: il task del
+progetto è di regressione e i metodi non supervisionati rientrano come strumenti
+di esplorazione.
+
+### Impostazione
+
+L'unità di osservazione è il motore e non il ciclo, perché la domanda riguarda la
+forma della traiettoria nel suo complesso. Sono usate le sole traiettorie di
+addestramento: quelle di verifica sono troncate in un punto casuale, quindi le
+statistiche di fine vita non vi sono definite e la durata osservata non è la
+durata del motore.
+
+Variabili per motore: per ciascun sensore non costante la lettura media negli
+ultimi 10 cicli e la deriva totale (differenza fra la media degli ultimi 10 cicli
+e quella dei primi 10), più la durata della traiettoria. Sono 31 variabili su
+FD001 e 33 su FD003. Le finestre non si sovrappongono su nessun motore, perché la
+traiettoria più breve dura 128 cicli.
+
+Le impostazioni operative sono escluse. Motivo: su questi due sottoinsiemi il
+regime di volo è unico e la loro variazione residua è oscillazione di misura
+attorno a un valore fisso; la standardizzazione, che il calcolo delle distanze
+richiede, la porterebbe a scala piena e ne farebbe rumore dentro la distanza, su
+un insieme di cento punti. Nel confronto fra modelli le due variabili sono invece
+mantenute, e la differenza di trattamento è ammissibile perché il raggruppamento
+non è una riga del confronto.
+
+Le etichette di modo di guasto dei singoli motori non sono distribuite con il
+dataset. Dentro un sottoinsieme non esiste quindi un riferimento contro cui
+misurare la correttezza di un raggruppamento, e l'indice di Rand corretto è usato
+come accordo fra due raggruppamenti diversi. Il numero di gruppi si legge sulla
+silhouette.
+
+### Risultati
+
+Silhouette al variare del numero di gruppi, K-Means e gerarchico con
+aggregazione di Ward.
+
+| Gruppi | FD001 K-Means | FD001 Ward | FD003 K-Means | FD003 Ward |
+|---|---|---|---|---|
+| 2 | 0,260 | 0,240 | 0,533 | 0,533 |
+| 3 | 0,241 | 0,198 | 0,479 | 0,477 |
+| 4 | 0,232 | 0,206 | 0,483 | 0,482 |
+| 5 | 0,203 | 0,204 | 0,406 | 0,397 |
+| 6 | 0,169 | 0,155 | 0,249 | 0,222 |
+
+Su FD001 non c'è struttura di gruppi. La silhouette massima vale 0,260 e
+decresce da lì, e i due algoritmi allo stesso numero di gruppi concordano solo
+per 0,702, cioè trovano partizioni diverse.
+
+Su FD003 la struttura c'è ed è a due gruppi. La silhouette vale 0,533 con un
+massimo interno, K-Means e Ward producono la stessa identica partizione (accordo
+1,000), le dimensioni sono 44 e 56, e la partizione è invariante su tutti e
+cinque i semi di inizializzazione. Due algoritmi con funzioni obiettivo diverse
+convergono sullo stesso risultato. A parità di costruzione delle variabili e di
+numero di unità, 0,533 contro 0,260 è un fattore due.
+
+I criteri di aggregazione complete e average non sono confrontabili con gli altri
+su questi dati: a due gruppi isolano un solo motore contro 99 su FD003 e tre
+contro 97 su FD001. La loro silhouette è alta perché premia la separazione di
+punti isolati, non perché individui una partizione. La colonna della dimensione
+minima negli artefatti è ciò che rende leggibile la degenerazione.
+
+Il numero di gruppi trovato su FD003 coincide con il numero di modi di guasto
+documentato per quel sottoinsieme. È una coincidenza fra una misura e una
+proprietà nota, non un'identificazione: senza etichette per unità, che i due
+gruppi siano i due modi resta interpretazione. Ciò che è misurato è che FD003 si
+separa e FD001 no.
+
+### Le due popolazioni di FD003
+
+Sui duecento motori dei due sottoinsiemi uniti, dove l'appartenenza al
+sottoinsieme è un'etichetta esterna vera, il raggruppamento a due gruppi ottiene
+silhouette 0,552 ma accordo di sole 0,191 con quell'etichetta, e produce gruppi
+di 44 e 156 unità.
+
+La partizione dominante non è quindi FD001 contro FD003. La tabella incrociata lo
+mostra senza ambiguità: i 44 dell'unione sono esattamente i 44 che FD003 separa
+da solo, con corrispondenza diagonale e nessuno scambio, e i 100 motori di FD001
+finiscono tutti nel gruppo maggiore insieme ai restanti 56 di FD003.
+
+FD003 è composto da una popolazione indistinguibile da FD001 più una seconda
+popolazione separata. È il motivo per cui un metodo non supervisionato non
+ricostruisce da quale file provenga un motore: per tre quarti delle unità le due
+popolazioni si sovrappongono davvero.
+
+Le durate confermano la lettura su una quantità che non è una lettura di sensore.
+
+| Insieme | Motori | Durata media | Dispersione |
+|---|---|---|---|
+| FD001 | 100 | 206,3 | 46,3 |
+| FD003, gruppo che si sovrappone a FD001 | 56 | 202,1 | 42,3 |
+| FD003, gruppo separato | 44 | 304,7 | 94,3 |
+
+Ricomponendo i due gruppi di FD003 si ottiene una dispersione complessiva di 86,5
+cicli, che è il valore misurato in fase di esplorazione il 26-08. La dispersione
+anomala delle durate di FD003, che allora era un fatto isolato, è interamente
+prodotta dalla convivenza di due popolazioni, e le due misure si spiegano a
+vicenda.
+
+La durata è una delle variabili del raggruppamento, quindi leggere la separazione
+attraverso le durate non è di per sé una conferma indipendente. Ho ripetuto il
+raggruppamento escludendo la durata: su FD003 la partizione ottenuta coincide con
+quella completa (accordo 1,000, gruppi di 44 e 56) e la silhouette sale da 0,533 a
+0,542. La separazione è quindi prodotta dalle sole letture dei sensori e la
+differenza di durata ne è una conseguenza, non la causa. Su FD001 l'assenza di
+struttura resta invariata, con silhouette 0,266.
+
+### Limiti
+
+Le variabili per motore riassumono la traiettoria con lo stato di fine vita e la
+deriva complessiva: una traiettoria che degrada in modo non monotono e una che
+degrada linearmente fino allo stesso punto sono indistinguibili in questa
+rappresentazione.
+
+La silhouette di 0,533 indica una separazione leggibile ma non netta: i gruppi
+esistono, non sono isolati.
+
+Il raggruppamento non spiega perché i modelli ottengano su FD003 punteggi
+migliori che su FD001. Descrive la struttura della popolazione, non la
+difficoltà del problema di regressione.
+
+### Artefatti
+
+`src/clustering.py` per le variabili per motore, i punteggi, le etichette e la
+matrice di aggregazione; `scripts/run_clustering.py` per l'esecuzione. Gli
+artefatti stanno in `experiments/clustering/` e non sono versionati.
+
+ESITO: FD003 contiene due popolazioni di traiettorie separabili senza
+supervisione, FD001 una sola, e i motori di FD001 sono indistinguibili da una
+delle due popolazioni di FD003.
