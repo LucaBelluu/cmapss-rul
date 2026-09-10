@@ -30,6 +30,9 @@ Cosa produce
     - `{NOME}_kmeans_seeds.csv`, la sensibilita' di K-Means al seme;
     - `{NOME}_linkage.csv`, la matrice di aggregazione del dendrogramma.
 
+    Per ciascun sottoinsieme produce inoltre `{SUBSET}_senza_durata_cluster_scores.csv`
+    e `{SUBSET}_senza_durata_cluster_labels.csv`, descritti sotto.
+
 Le due analisi
     Dentro ciascun sottoinsieme, che e' l'analisi principale e risponde alla
     domanda sui modi di guasto. Qui non esiste etichetta di riferimento, perche'
@@ -46,6 +49,19 @@ Le due analisi
     L'unione usa le sole variabili presenti in entrambi i sottoinsiemi:
     `sensor_10` e' costante su FD001 e non lo e' su FD003, quindi entra nella
     matrice del secondo e non in quella dell'unione.
+
+Controllo sulla durata
+    La durata della traiettoria e' una delle variabili del raggruppamento e ne e'
+    anche la lettura piu' immediata, quindi una separazione che si legga sulle
+    durate potrebbe essere prodotta dalla durata stessa invece che dallo stato
+    dei sensori. Il controllo ripete l'analisi sulle sole letture dei sensori e
+    ne registra silhouette ed etichette: se la partizione non cambia, la
+    separazione e' prodotta dai sensori e la differenza di durata ne e' una
+    conseguenza.
+
+    Del controllo vengono scritti punteggi ed etichette e non l'intera sequenza:
+    le variabili per motore sono quelle gia' scritte meno una colonna, e la
+    matrice di aggregazione serve al dendrogramma dell'analisi principale.
 
 Come si lancia
     python -m scripts.run_clustering
@@ -72,9 +88,29 @@ from src.design import SUBSETS_IN_SCOPE, build_design
 
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "clustering"
 
+# Suffisso con cui il controllo sulla durata compare nei nomi dei file e nella
+# colonna `insieme` dei punteggi.
+VARIANT = "senza_durata"
 
-def analyse(name: str, features: pd.DataFrame, reference: np.ndarray | None = None) -> dict:
-    """Esegue la sequenza completa su una tabella di variabili per motore."""
+# Artefatti del controllo sulla durata. Gli altri tre prodotti da `analyse` non
+# vengono scritti: le variabili per motore sono quelle dell'analisi principale
+# meno una colonna, e la matrice di aggregazione serve al solo dendrogramma.
+VARIANT_OUTPUTS = ("cluster_scores", "cluster_labels")
+
+
+def analyse(
+    name: str,
+    features: pd.DataFrame,
+    reference: np.ndarray | None = None,
+    durations: pd.Series | None = None,
+) -> dict:
+    """Esegue la sequenza completa su una tabella di variabili per motore.
+
+    `durations` esiste perche' il controllo sulla durata passa una matrice che
+    quella colonna non contiene, mentre le etichette la riportano comunque: e' la
+    quantita' con cui i gruppi vengono descritti, anche quando non partecipa al
+    calcolo delle distanze.
+    """
     matrix = standardize(features)
     coordinates, explained = projection(matrix)
 
@@ -82,7 +118,7 @@ def analyse(name: str, features: pd.DataFrame, reference: np.ndarray | None = No
     scores.insert(0, "insieme", name)
 
     labels = cluster_labels(matrix, features.index)
-    labels.insert(0, "durata", features["durata"])
+    labels.insert(0, "durata", features["durata"] if durations is None else durations)
     labels.insert(1, "pc1", coordinates[:, 0])
     labels.insert(2, "pc2", coordinates[:, 1])
     if reference is not None:
@@ -135,6 +171,17 @@ def main() -> None:
         per_subset[subset] = features
         for suffix, frame in analyse(subset, features).items():
             frame.to_csv(OUTPUT_DIR / f"{subset}_{suffix}.csv", index=False)
+
+        # Controllo sulla durata, sullo stesso sottoinsieme e con le stesse
+        # impostazioni: cambia soltanto la matrice su cui le distanze sono
+        # calcolate.
+        variant = analyse(
+            f"{subset}_{VARIANT}",
+            features.drop(columns=["durata"]),
+            durations=features["durata"],
+        )
+        for suffix in VARIANT_OUTPUTS:
+            variant[suffix].to_csv(OUTPUT_DIR / f"{subset}_{VARIANT}_{suffix}.csv", index=False)
 
     if len(per_subset) < 2:
         print("\nunione non prodotta: richiede entrambi i sottoinsiemi")

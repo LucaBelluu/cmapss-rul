@@ -1,0 +1,7 @@
+sottoinsieme,lettura,modelli,coppie_totali,coppie_separabili,inversioni,correlazione_di_rango
+FD001,tutti i cicli,22,231,136,0,0.888323757473311
+FD001,solo ultimo ciclo,22,231,136,0,0.9844504530624026
+FD001,"ultimo ciclo, target non censurato",22,231,136,0,0.9810577461592582
+FD003,tutti i cicli,22,231,158,1,0.8686069857923909
+FD003,solo ultimo ciclo,22,231,158,0,0.9301276333912923
+FD003,"ultimo ciclo, target non censurato",22,231,158,1,0.9138174990411817

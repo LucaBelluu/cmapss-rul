@@ -1,0 +1,8 @@
+controllo,insieme,valore
+accordo fra la partizione completa e quella senza la durata,FD001,0.9205441326485486
+accordo minimo fra i cinque semi di K-Means,FD001,0.9598385576399676
+accordo fra K-Means e clustering gerarchico di Ward,FD001,0.7023021574268552
+accordo fra la partizione completa e quella senza la durata,FD003,1.0
+accordo minimo fra i cinque semi di K-Means,FD003,1.0
+accordo fra K-Means e clustering gerarchico di Ward,FD003,1.0
+accordo fra la partizione dell'unione e il sottoinsieme di provenienza,unione,0.1908089006502832

@@ -1,0 +1,17 @@
+subset,model,block,n_partizioni,conteggi_identici,scarto_max_rmse
+FD001,baseline_costante,kernel_models,15,True,0.0
+FD001,baseline_costante,linear_models,15,True,0.0
+FD001,baseline_costante,nonlinear_models,15,True,0.0
+FD001,baseline_costante,tree_models,15,True,0.0
+FD001,baseline_solo_ciclo,kernel_models,15,True,0.0
+FD001,baseline_solo_ciclo,linear_models,15,True,0.0
+FD001,baseline_solo_ciclo,nonlinear_models,15,True,0.0
+FD001,baseline_solo_ciclo,tree_models,15,True,0.0
+FD003,baseline_costante,kernel_models,15,True,0.0
+FD003,baseline_costante,linear_models,15,True,0.0
+FD003,baseline_costante,nonlinear_models,15,True,0.0
+FD003,baseline_costante,tree_models,15,True,0.0
+FD003,baseline_solo_ciclo,kernel_models,15,True,0.0
+FD003,baseline_solo_ciclo,linear_models,15,True,0.0
+FD003,baseline_solo_ciclo,nonlinear_models,15,True,0.0
+FD003,baseline_solo_ciclo,tree_models,15,True,0.0

@@ -2789,3 +2789,185 @@ artefatti stanno in `experiments/clustering/` e non sono versionati.
 ESITO: FD003 contiene due popolazioni di traiettorie separabili senza
 supervisione, FD001 una sola, e i motori di FD001 sono indistinguibili da una
 delle due popolazioni di FD003.
+
+## [10-09-2026] — CORREZIONE: il report separato è escluso, l'argomentazione va nel README
+
+La voce del 27-08, fissando la sequenza dei blocchi, elencava fra i contenuti della fase di
+chiusura sia un report sia il README. Ho eliminato il report separato.
+
+Motivo: i due documenti avrebbero occupato lo stesso livello di lettura. Il README è il
+documento che chi apre la repository legge per primo, e un secondo file avrebbe duplicato
+l'argomentazione oppure costretto il README a rimandare altrove per la parte che lo giustifica.
+La divisione che resta è per livello di lettura e non per argomento: i notebook mostrano come si
+arriva a un risultato e come si legge, il README dice qual è il risultato e perché è credibile,
+con i numeri dentro.
+
+Conseguenza sulla fase: le figure e le tabelle esportate in `results/` sono anche quelle che il
+README incorpora, e sono state scelte sapendolo.
+
+## [10-09-2026] — Chiusura del confronto: sesto notebook, figure e tabelle finali
+
+### Il notebook
+
+Ho scritto `notebooks/06_confronto_complessivo.ipynb`. È il documento in cui i quattro blocchi
+del confronto e le tre letture di chiusura convergono, e non è un riassunto dei cinque notebook
+precedenti, che commentano una famiglia di modelli per volta e non possono dire dove quella
+famiglia si collochi rispetto alle altre.
+
+Dieci sezioni: legittimità della composizione, graduatoria complessiva, struttura per famiglie e
+sua replica sui due sottoinsiemi, confronto appaiato fold per fold, variabilità dovuta al seme
+dello stimatore, trasferimento fuori campione, errore per fascia di vita residua, sensibilità
+alla soglia di censura, raggruppamento delle traiettorie, sintesi con i limiti dichiarati.
+
+Il notebook legge artefatti e non esegue lavoro computazionale, come i cinque precedenti, e si
+esegue dall'inizio alla fine in pochi secondi.
+
+Motivo della sezione di apertura sulla legittimità: comporre quattro tabelle prodotte da
+esecuzioni diverse presuppone partizioni identiche, e il presupposto è verificabile perché le due
+baseline sono ricalcolate in ogni blocco. La verifica è la condizione di esistenza di tutto ciò
+che segue e sta quindi prima della graduatoria.
+
+### Estensione dello script di raggruppamento
+
+Sintomo: il controllo registrato il 09-09, cioè il raggruppamento ripetuto senza la durata della
+traiettoria, non aveva alcun artefatto in `experiments/clustering/` e non era riproducibile
+clonando la repository.
+
+Causa: `scripts/run_clustering.py` non calcolava affatto quella variante.
+
+Soluzione: `analyse` riceve un argomento `durations` opzionale, perché il controllo passa una
+matrice priva di quella colonna mentre le etichette la riportano comunque, e `main` esegue la
+variante dopo l'analisi principale di ciascun sottoinsieme scrivendone punteggi ed etichette. Non
+scrivo gli altri tre artefatti della variante: le variabili per motore sarebbero quelle
+dell'analisi principale meno una colonna, e la matrice di aggregazione serve al solo dendrogramma
+dell'analisi principale. `src/clustering.py` non è stato toccato.
+
+Verifica: la riesecuzione riproduce l'analisi principale su ogni valore registrato il 09-09,
+silhouette a due gruppi 0,260 su FD001 e 0,533 su FD003, gruppi di 44 e 56, accordo 1,000 fra
+K-Means e Ward su FD003, unione 0,552 con accordo 0,191 con la provenienza. Il conteggio delle
+variabili scende di uno nei due blocchi del controllo, quindi la colonna è stata tolta dalla
+matrice delle distanze e non solo dalla stampa.
+
+Due fatti che l'esecuzione ha reso visibili e che non erano registrati. L'invarianza di K-Means
+al seme a due gruppi vale 1,000 su FD003 ma si ferma a 0,960 su FD001, dove la partizione cambia
+leggermente da un seme all'altro: è coerente con l'assenza di gruppi reali, perché senza struttura
+il minimo locale trovato dipende dall'inizializzazione. Togliendo la durata, su FD001 l'accordo
+fra K-Means e Ward a due gruppi sale da 0,702 a 0,844, mentre la silhouette resta attorno a 0,26 e
+decresce dal massimo: la conclusione sull'assenza di struttura non cambia.
+
+### Quantità derivate calcolate nel notebook
+
+Tre quantità riportate nel diario non esistono in alcun artefatto: il conteggio delle inversioni
+fra coppie separabili, il divario in dispersioni fra due righe specifiche nei due regimi di
+censura, le tabelle incrociate dei raggruppamenti. Le calcola il notebook e le esporta in
+`results/tables/`, dove diventano artefatto versionato.
+
+Motivo: la regola del progetto vieta al notebook il lavoro computazionale, non la derivazione da
+una tabella di risultati già su disco, e i notebook dei blocchi precedenti già derivano al loro
+interno guadagni in dispersioni, piattezza delle griglie ed esponenti empirici di costo.
+
+Alternativa scartata: estendere `scripts/run_holdout.py` e rieseguirlo. Avrebbe comportato
+riaddestrare ventidue modelli e due baseline per sottoinsieme e rileggere l'insieme di verifica
+ufficiale per persistere un conteggio derivato da una tabella di ventiquattro righe.
+
+Il controllo senza la durata è invece rimasto nello script perché è un riadattamento di K-Means e
+non una derivazione: il notebook non lo poteva rifare senza violare la stessa regola.
+
+### Un difetto degli artefatti corretto in lettura
+
+In `{SUBSET}_ranking.csv` e `{SUBSET}_holdout.csv` le due baseline portano l'etichetta del blocco
+da cui la graduatoria preleva la copia superstite, cioè `Metodi a margine e reti`. Deriva da
+`src/final.py`, che mappa `block` in `blocco` dopo aver scartato le copie duplicate. In una figura
+colorata per famiglia avrebbe attribuito il pavimento informativo a una famiglia di modelli.
+
+Soluzione: il notebook assegna alle baseline una categoria propria in lettura. Non ho modificato
+`src/final.py`, perché la correzione a monte avrebbe imposto di rigenerare gli artefatti dei
+quattro blocchi.
+
+### Concordanza fra graduatoria e insieme di verifica
+
+Il conteggio delle inversioni riguarda le sole coppie che la regola di lettura del progetto
+separa in cross-validation, cioè quelle il cui divario supera la dispersione combinata delle due
+righe. La correlazione di rango, presa da sola, impone un ordine anche fra righe dichiarate non
+ordinabili, e un riordinamento interno a un gruppo indistinguibile la abbassa senza che nulla si
+sia invertito.
+
+| Sottoinsieme | Lettura | Coppie separabili su 231 | Inversioni | Correlazione di rango |
+|---|---|---|---|---|
+| FD001 | tutti i cicli | 136 | 0 | 0,888 |
+| FD001 | solo ultimo ciclo | 136 | 0 | 0,984 |
+| FD001 | ultimo ciclo, target non censurato | 136 | 0 | 0,981 |
+| FD003 | tutti i cicli | 158 | 1 | 0,869 |
+| FD003 | solo ultimo ciclo | 158 | 0 | 0,930 |
+| FD003 | ultimo ciclo, target non censurato | 158 | 1 | 0,914 |
+
+La correlazione ricalcolata nel notebook riproduce fino all'ultima cifra quella persistita da
+`scripts/run_holdout.py`, il che conferma che le due letture operano sugli stessi modelli e sulle
+stesse colonne. Le inversioni residue valgono centesimi di ciclo e riguardano righe che la regola
+tratta come indistinguibili: l'ordine che il protocollo dichiara leggibile si trasferisce
+integralmente su una popolazione indipendente.
+
+Cautela: ogni lettura della verifica è un valore singolo, privo di misura di variabilità, e il
+conteggio delle inversioni è descrittivo e fuori dal materiale del corso.
+
+### Errore per fascia di vita residua
+
+Ho scomposto l'errore sull'insieme di verifica per fascia di vita residua vera, usando le
+predizioni già persistite e un modello per famiglia scelto sulla graduatoria di FD001, gli stessi
+su entrambi i sottoinsiemi. I valori sono in `results/tables/errore_per_vita_residua.csv`.
+
+Il profilo non è monotono. L'errore dei modelli è minimo ai due estremi e ha un massimo nella
+fascia intermedia. Nella fascia censurata il target è costante per costruzione e al modello basta
+produrre il valore di soglia; quella fascia contiene la maggior parte delle righe di verifica,
+quindi la metrica complessiva è pesata verso la parte più facile del problema. Vicino al guasto
+l'errore torna basso, ed è la fascia operativamente rilevante. Il massimo cade dove il modello
+deve collocare l'inizio del degrado.
+
+La baseline sul solo numero di ciclo ha il profilo opposto, con l'errore massimo nella fascia più
+vicina al guasto: una funzione monotona del conteggio non distingue un motore che si guasta presto
+da uno che si guasta tardi. La distanza fra i modelli e quella baseline è quindi massima dove il
+conteggio fallisce e si riduce nelle fasce intermedie. L'informazione che le letture dei sensori
+aggiungono non è distribuita lungo la vita del motore, è concentrata dove il conteggio non basta.
+
+Avevo scritto il commento di questa sezione prima di guardare i valori, prevedendo un errore
+massimo nella fascia censurata e decrescente verso il guasto. La forma del profilo lo ha
+smentito e ho riscritto il commento sui dati. La scomposizione era una lettura nuova, non
+registrata in precedenza, quindi non c'era nulla da cui derivarla.
+
+La scomposizione è descrittiva e non entra in graduatoria: le fasce sono definite sul target vero
+e non sono note al momento della predizione.
+
+### Artefatti prodotti
+
+Il notebook esporta dieci figure in `results/figures/` e tredici tabelle in `results/tables/`,
+con nomi che non collidono con i file già presenti. La tabella di testa del progetto è
+`graduatoria_complessiva.csv`, che riporta per ciascun sottoinsieme media, dispersione, rango e
+divario in dispersioni dei ventidue modelli e delle due baseline.
+
+ESITO: la graduatoria del progetto, il confronto appaiato, il diagnostico sul seme, le tre
+letture dell'insieme di verifica, la sensibilità alla censura e il raggruppamento delle
+traiettorie hanno ora un documento che li legge e artefatti versionati che li registrano. Prima
+di questa fase esistevano soltanto in `experiments/`, che non è versionato, e come tabelle in
+questo registro.
+
+## [10-09-2026] — CORREZIONE: ampiezza del gruppo non ordinabile nella graduatoria complessiva
+
+La voce del 31-08 riportava che su FD001 sette modelli stanno entro 0,39 cicli e descriveva la
+struttura per famiglie come netta e ripetuta identica sui due sottoinsiemi. Applicando alla
+graduatoria complessiva la regola di lettura del progetto, cioè il divario inferiore alla
+dispersione combinata delle due righe, il gruppo che il protocollo non ordina su FD001 è più
+ampio di quei sette e scende fino a comprendere i modelli additivi: dal gruppo di testa restano
+separati soltanto l'albero singolo, la famiglia lineare e il kernel polinomiale. Su FD003 lo
+stesso criterio si ferma dentro il gradino di testa e lascia fuori i modelli additivi.
+
+I sette modelli entro 0,39 cicli restano il nucleo più stretto della graduatoria e quella
+misura non cambia. Ciò che va corretto è la qualificazione della struttura per famiglie. Il
+divario fra la famiglia lineare e quella additiva è ampio su entrambi i sottoinsiemi e supera
+largamente la dispersione fra fold. Quello fra la famiglia additiva e il gradino di testa è molto
+più stretto: resta leggibile su FD003 e non lo è su FD001. Il risultato difendibile è che l'ordine
+dei tre gradini si replica sui due sottoinsiemi, mentre la risoluzione con cui il protocollo li
+separa cambia da un sottoinsieme all'altro.
+
+La correzione è coerente con il controllo di sensibilità alla censura registrato il 09-09, dove
+nel regime censurato il divario del modello additivo dal migliore vale 0,67 dispersioni su FD001
+e 1,75 su FD003.
