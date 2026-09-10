@@ -13,12 +13,12 @@ Cosa riceve
 Cosa produce
     In `experiments/protocol_check/`, per ciascun sottoinsieme: il riepilogo
     della matrice di progetto, le metriche per fold, il riepilogo per modello,
-    il confronto fra partizionamento per unita' e partizionamento per riga, e la
+    il confronto fra partizionamento per unità e partizionamento per riga, e la
     valutazione sull'insieme di verifica ufficiale.
 
 Cosa verifica
-    1. Che il target di verifica sull'ultimo ciclo di ogni unita' coincida con
-       le etichette del file di RUL. Il controllo e' dentro `src.design` e fa
+    1. Che il target di verifica sull'ultimo ciclo di ogni unità coincida con
+       le etichette del file di RUL. Il controllo è dentro `src.design` e fa
        fallire la costruzione della matrice.
     2. Che nessun motore compaia contemporaneamente in addestramento e in
        verifica in nessuna partizione.
@@ -26,9 +26,9 @@ Cosa verifica
        deviazione standard del target, il che conferma che target e metriche
        sono allineati.
     4. Che il partizionamento per riga produca un errore inferiore a quello per
-       unita', cioe' che il vincolo di gruppo stia effettivamente correggendo
-       una stima ottimistica. Il confronto e' eseguito su un modello lineare e
-       su un insieme di alberi: il primo ha capacita' limitata di sfruttare la
+       unità, cioè che il vincolo di gruppo stia effettivamente correggendo
+       una stima ottimistica. Il confronto è eseguito su un modello lineare e
+       su un insieme di alberi: il primo ha capacità limitata di sfruttare la
        somiglianza fra cicli adiacenti, il secondo no, e il divario fra i due
        divari misura quanto il vincolo conti.
     5. Che il divario fra errore in cross-validation ed errore sull'insieme di
@@ -37,7 +37,7 @@ Cosa verifica
 
 Modelli impiegati
     Nessuno di essi appartiene al confronto. Le due baseline sono i termini di
-    paragone della tabella finale, la regressione lineare e' il modello con cui
+    paragone della tabella finale, la regressione lineare è il modello con cui
     si esercita la catena, la regressione senza numero di ciclo e la foresta
     casuale sono strumenti diagnostici.
 
@@ -75,7 +75,7 @@ from src.target import RUL_CAP
 
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "protocol_check"
 
-# Seme fisso per la foresta usata nella diagnosi del partizionamento. Non e' un
+# Seme fisso per la foresta usata nella diagnosi del partizionamento. Non è un
 # modello del confronto: serve solo a rendere visibile l'effetto del vincolo di
 # gruppo su un modello capace di memorizzare le righe vicine.
 DIAGNOSTIC_SEED = 0
@@ -116,10 +116,10 @@ def run_subset(subset: str, cap: int | None, seeds, quick: bool) -> dict[str, pd
     models["regressione_lineare"] = build_pipeline(LinearRegression())
 
     # Modello diagnostico, non in confronto: quantifica in cross-validation la
-    # quota di capacita' predittiva che proviene dal solo conteggio dei cicli.
-    # La relazione fra numero di ciclo e vita residua e' esatta sulle
-    # traiettorie complete e non lo e' su quelle troncate, quindi questa quota
-    # e' anche parte della spiegazione del divario fra cross-validation e
+    # quota di capacità predittiva che proviene dal solo conteggio dei cicli.
+    # La relazione fra numero di ciclo e vita residua è esatta sulle
+    # traiettorie complete e non lo è su quelle troncate, quindi questa quota
+    # è anche parte della spiegazione del divario fra cross-validation e
     # verifica finale.
     models["regressione_lineare_senza_ciclo"] = build_pipeline(
         LinearRegression(), columns=[c for c in design.features if c != CYCLE_COL]
@@ -135,12 +135,12 @@ def run_subset(subset: str, cap: int | None, seeds, quick: bool) -> dict[str, pd
 
     cv_folds = pd.concat(fold_frames, ignore_index=True)
     cv_summary = pd.DataFrame(summaries)
-    print("\ncross-validation per unita' motore")
+    print("\ncross-validation per unità motore")
     print(cv_summary.to_string(index=False))
 
     # Controllo di coerenza: l'errore quadratico medio della predizione costante
-    # deve coincidere con la deviazione standard del target. Lo scarto residuo e'
-    # dovuto al fatto che la costante e' la media dei motori di addestramento del
+    # deve coincidere con la deviazione standard del target. Lo scarto residuo è
+    # dovuto al fatto che la costante è la media dei motori di addestramento del
     # fold e non quella del fold di verifica.
     const_rmse = cv_summary.loc[cv_summary["model"] == "baseline_costante", "rmse_mean"].iloc[0]
     print(
@@ -220,7 +220,7 @@ def main() -> None:
     parser.add_argument(
         "--no-cap",
         action="store_true",
-        help="disattiva la censura del target (controllo di sensibilita')",
+        help="disattiva la censura del target (controllo di sensibilità)",
     )
     parser.add_argument(
         "--quick",

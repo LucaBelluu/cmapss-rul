@@ -5,7 +5,7 @@ Ruolo nel progetto
     laboratorio 7, sotto il protocollo di valutazione del progetto. I tre
     metodi condividono lo stesso motore di stima e differiscono unicamente per
     la strategia con cui esplorano lo spazio dei sottoinsiemi: la differenza
-    fra i loro risultati e' quindi attribuibile alla ricerca e non al modo in
+    fra i loro risultati è quindi attribuibile alla ricerca e non al modo in
     cui il modello viene stimato.
 
 Cosa riceve
@@ -15,16 +15,16 @@ Cosa riceve
 
 Cosa produce
     Per ciascun metodo, la storia della ricerca in forma tabellare (un record
-    per cardinalita' esplorata, con il migliore sottoinsieme trovato e il suo
-    errore in cross-validation) e il sottoinsieme selezionato, cioe' quello
+    per cardinalità esplorata, con il migliore sottoinsieme trovato e il suo
+    errore in cross-validation) e il sottoinsieme selezionato, cioè quello
     con l'errore minimo lungo la storia.
 
-Perche' un motore di stima dedicato
+Perché un motore di stima dedicato
     La ricerca esaustiva su p variabili richiede 2^p - 1 stime per ogni
     partizione: 262.143 su FD001 e 524.287 su FD003, moltiplicate per il
     numero di fold. Nella forma del laboratorio, dove ogni sottoinsieme viene
     valutato costruendo una pipeline e chiamando la cross-validation, il costo
-    non e' sostenibile.
+    non è sostenibile.
 
     Il costo si abbatte osservando che i minimi quadrati su un sottoinsieme di
     variabili si ottengono dalle sottomatrici di X'X e X'y, che dipendono dalla
@@ -33,11 +33,11 @@ Perche' un motore di stima dedicato
     scrive come forma quadratica nei coefficienti e non richiede di calcolare
     le predizioni riga per riga. Il costo per sottoinsieme passa dall'ordine
     del numero di righe all'ordine del quadrato del numero di variabili
-    selezionate, ed e' cio' che rende eseguibile la ricerca esaustiva completa
-    invece di una sua versione troncata a una cardinalita' massima arbitraria.
+    selezionate, ed è ciò che rende eseguibile la ricerca esaustiva completa
+    invece di una sua versione troncata a una cardinalità massima arbitraria.
 
-    La riformulazione e' algebricamente esatta e non e' un'approssimazione. La
-    verifica di equivalenza contro la stima ordinaria e' in
+    La riformulazione è algebricamente esatta e non è un'approssimazione. La
+    verifica di equivalenza contro la stima ordinaria è in
     `scripts/run_selection_check.py`.
 
 Standardizzazione
@@ -47,7 +47,7 @@ Standardizzazione
     standardizzazione e regressione lineare usata da tutti gli altri modelli
     del confronto, con il pre-processing dentro il flusso di validazione.
     Il centraggio del target sostituisce il termine di intercetta, che non
-    compare percio' fra le incognite del sistema.
+    compare perciò fra le incognite del sistema.
 """
 
 from __future__ import annotations
@@ -58,8 +58,8 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 
-# Tolleranza sotto la quale la deviazione standard di una colonna e'
-# considerata nulla. Le colonne costanti sono gia' rimosse dalla matrice di
+# Tolleranza sotto la quale la deviazione standard di una colonna è
+# considerata nulla. Le colonne costanti sono già rimosse dalla matrice di
 # progetto, quindi il caso non si presenta: la soglia evita una divisione per
 # zero se il motore viene riusato su matrici costruite altrove.
 _STD_FLOOR = 1e-12
@@ -72,7 +72,7 @@ class FoldGram:
     gram, moment
         Prodotti X'X e X'y sulla parte di addestramento, standardizzata.
     gram_valid, moment_valid, tss_valid
-        Le quantita' corrispondenti sulla parte di verifica, con il target
+        Le quantità corrispondenti sulla parte di verifica, con il target
         centrato sulla media di addestramento, e la somma dei suoi quadrati.
         Permettono di calcolare la somma dei quadrati dei residui di un
         qualunque sottoinsieme senza costruire le predizioni.
@@ -92,8 +92,8 @@ class FoldGram:
 def build_grams(X, y, splits) -> list[FoldGram]:
     """Precalcola le statistiche sufficienti di ogni partizione.
 
-    E' l'unico punto in cui si scorrono le righe: da qui in avanti il costo di
-    valutare un sottoinsieme non dipende piu' dal numero di righe.
+    È l'unico punto in cui si scorrono le righe: da qui in avanti il costo di
+    valutare un sottoinsieme non dipende più dal numero di righe.
     """
     X = np.asarray(X, dtype=np.float64)
     y = np.asarray(y, dtype=np.float64)
@@ -130,10 +130,10 @@ def _solve(matrix: np.ndarray, rhs: np.ndarray) -> np.ndarray:
     """Coefficienti dei minimi quadrati per un sottoinsieme di variabili.
 
     Il ripiego sui minimi quadrati in forma generale copre il caso di
-    collinearita' esatta, in cui il sistema e' singolare: restituisce la
+    collinearità esatta, in cui il sistema è singolare: restituisce la
     soluzione di norma minima, come fa la regressione lineare di scikit-learn.
     Sulle matrici del progetto il caso non si presenta, la coppia di sensori
-    piu' correlata essendo a 0,963.
+    più correlata essendo a 0,963.
     """
     try:
         return np.linalg.solve(matrix, rhs)
@@ -146,8 +146,8 @@ def _fold_rmse(gram: FoldGram, cols: tuple[int, ...] | list[int]) -> float:
 
     La somma dei quadrati dei residui sulla parte di verifica si ottiene dalla
     forma quadratica dei coefficienti, senza costruire le predizioni. Il valore
-    puo' risultare negativo per soli errori di arrotondamento quando l'errore
-    e' prossimo a zero, ed e' percio' troncato a zero prima della radice.
+    può risultare negativo per soli errori di arrotondamento quando l'errore
+    è prossimo a zero, ed è perciò troncato a zero prima della radice.
     """
     idx = np.ix_(cols, cols)
     beta = _solve(gram.gram[idx], gram.moment[list(cols)])
@@ -162,7 +162,7 @@ def _fold_rmse(gram: FoldGram, cols: tuple[int, ...] | list[int]) -> float:
 def cv_rmse(grams: list[FoldGram], cols) -> tuple[float, float]:
     """Media e deviazione standard dell'errore di un sottoinsieme sulle partizioni.
 
-    La media sui fold e' la quantita' su cui i tre metodi confrontano i
+    La media sui fold è la quantità su cui i tre metodi confrontano i
     sottoinsiemi, coerentemente con il resto del progetto, dove le metriche
     sono calcolate per fold e poi mediate.
     """
@@ -173,12 +173,12 @@ def cv_rmse(grams: list[FoldGram], cols) -> tuple[float, float]:
 def best_subset(X, y, splits, feature_names) -> pd.DataFrame:
     """Ricerca esaustiva su tutti i sottoinsiemi non vuoti di variabili.
 
-    Restituisce un record per cardinalita', con il sottoinsieme di errore
-    minimo a quella cardinalita'. La sequenza dei minimi per cardinalita' e' il
+    Restituisce un record per cardinalità, con il sottoinsieme di errore
+    minimo a quella cardinalità. La sequenza dei minimi per cardinalità è il
     materiale con cui si legge il compromesso fra numero di variabili e errore,
-    ed e' la stessa forma prodotta dal laboratorio.
+    ed è la stessa forma prodotta dal laboratorio.
 
-    Il numero di sottoinsiemi cresce come 2^p: la funzione e' eseguibile sulle
+    Il numero di sottoinsiemi cresce come 2^p: la funzione è eseguibile sulle
     18 e 19 variabili del progetto e non lo sarebbe su un numero
     sensibilmente maggiore.
     """
@@ -209,12 +209,12 @@ def best_subset(X, y, splits, feature_names) -> pd.DataFrame:
 
 
 def forward_stepwise(X, y, splits, feature_names) -> pd.DataFrame:
-    """Aggiunge a ogni passo la variabile che riduce di piu' l'errore.
+    """Aggiunge a ogni passo la variabile che riduce di più l'errore.
 
     Il percorso viene costruito per intero, fino al modello completo, senza
-    arresto anticipato al primo passo che non migliora. Il costo e' lo stesso a
+    arresto anticipato al primo passo che non migliora. Il costo è lo stesso a
     meno di poche stime, e il percorso completo rende leggibile l'andamento
-    dell'errore oltre il minimo, che e' materiale di commento. La selezione
+    dell'errore oltre il minimo, che è materiale di commento. La selezione
     avviene poi sul passo di errore minimo, come nel laboratorio.
     """
     grams = build_grams(X, y, splits)
@@ -247,15 +247,15 @@ def forward_stepwise(X, y, splits, feature_names) -> pd.DataFrame:
 
 
 def backward_stepwise(X, y, splits, feature_names) -> pd.DataFrame:
-    """Rimuove a ogni passo la variabile la cui esclusione riduce di piu' l'errore.
+    """Rimuove a ogni passo la variabile la cui esclusione riduce di più l'errore.
 
     Parte dal modello completo e scende fino al modello a una variabile. Come
-    per la forward, il percorso e' costruito per intero e la selezione avviene
-    sul passo di errore minimo, cosi' che i due metodi differiscano soltanto
+    per la forward, il percorso è costruito per intero e la selezione avviene
+    sul passo di errore minimo, così che i due metodi differiscano soltanto
     per la direzione della ricerca e siano confrontabili fra loro.
 
-    Nel materiale del corso la backward e' proposta come esercizio e non
-    svolta: l'implementazione e' interamente del progetto.
+    Nel materiale del corso la backward è proposta come esercizio e non
+    svolta: l'implementazione è interamente del progetto.
     """
     grams = build_grams(X, y, splits)
     n_features = len(feature_names)

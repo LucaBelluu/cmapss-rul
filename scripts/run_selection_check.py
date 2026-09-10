@@ -3,9 +3,9 @@
 Ruolo nel progetto
     `src.selection` non stima i minimi quadrati costruendo una pipeline per
     ogni sottoinsieme, ma risolvendo il sistema normale sulle sottomatrici
-    delle statistiche sufficienti di ciascuna partizione. La riformulazione e'
+    delle statistiche sufficienti di ciascuna partizione. La riformulazione è
     algebricamente esatta e riduce di due ordini di grandezza il costo della
-    ricerca esaustiva, ma e' codice del progetto e non una funzione di
+    ricerca esaustiva, ma è codice del progetto e non una funzione di
     libreria: senza una verifica, un errore nella riformulazione produrrebbe
     numeri plausibili e sbagliati.
 
@@ -13,15 +13,15 @@ Cosa verifica
     1. Che l'errore calcolato dal motore su un sottoinsieme di variabili
        coincida, entro la tolleranza dell'aritmetica in virgola mobile, con
        quello prodotto dalla valutazione ordinaria della corrispondente
-       pipeline sotto `src.protocol.evaluate`. E' il controllo che lega il
+       pipeline sotto `src.protocol.evaluate`. È il controllo che lega il
        motore al protocollo con cui sono valutati tutti gli altri modelli.
     2. Che la ricerca esaustiva sul motore restituisca gli stessi sottoinsiemi
        della ricerca esaustiva ingenua, su un numero di variabili abbastanza
        piccolo da rendere eseguibili entrambe.
     3. Che i tre metodi di selezione producano percorsi coerenti fra loro:
        forward e backward non peggiorano il modello completo, e nessuno dei
-       due batte la ricerca esaustiva a parita' di cardinalita', che e' una
-       proprieta' vera per costruzione e falsificabile dal codice.
+       due batte la ricerca esaustiva a parità di cardinalità, che è una
+       proprietà vera per costruzione e falsificabile dal codice.
 
 Come si lancia
     python -m scripts.run_selection_check
@@ -29,7 +29,7 @@ Come si lancia
 
     Senza argomenti la verifica avviene sulla matrice di progetto di FD001,
     che richiede i dati grezzi. Con `--synthetic` avviene su dati generati, che
-    non li richiedono: le due varianti verificano la stessa proprieta'
+    non li richiedono: le due varianti verificano la stessa proprietà
     algebrica.
 """
 
@@ -57,10 +57,10 @@ TOLERANCE = 1e-8
 
 
 def synthetic_design(n_units: int = 40, n_features: int = 8, seed: int = 0):
-    """Matrice raggruppata per unita', con struttura simile a quella del progetto.
+    """Matrice raggruppata per unità, con struttura simile a quella del progetto.
 
-    Serve unicamente alla verifica: le righe di una stessa unita' sono
-    correlate fra loro, come i cicli di uno stesso motore, cosi' che il
+    Serve unicamente alla verifica: le righe di una stessa unità sono
+    correlate fra loro, come i cicli di uno stesso motore, così che il
     controllo avvenga su una matrice con lo stesso tipo di condizionamento.
     """
     rng = np.random.default_rng(seed)
@@ -76,8 +76,8 @@ def synthetic_design(n_units: int = 40, n_features: int = 8, seed: int = 0):
         frames.append(np.hstack([cycles, sensors]))
         targets.append(np.maximum(length - np.arange(length), 0) + rng.normal(scale=2.0, size=length))
         groups.append(np.full(length, unit))
-    # La prima colonna e' il numero di ciclo, come nella matrice di progetto:
-    # senza di essa la baseline che usa il solo numero di ciclo non e'
+    # La prima colonna è il numero di ciclo, come nella matrice di progetto:
+    # senza di essa la baseline che usa il solo numero di ciclo non è
     # costruibile e la catena non sarebbe esercitata per intero.
     columns = [CYCLE_COL] + [f"x_{i:02d}" for i in range(n_sensors)]
     X = pd.DataFrame(np.vstack(frames), columns=columns)
@@ -145,7 +145,7 @@ def check_exhaustive(X, y, groups, splits, feature_names) -> None:
         raise AssertionError("le due ricerche selezionano sottoinsiemi diversi")
     if merged["scarto"].max() > TOLERANCE:
         raise AssertionError(f"scarto massimo {merged['scarto'].max():.3e} oltre la tolleranza")
-    print("stessi sottoinsiemi a ogni cardinalita'")
+    print("stessi sottoinsiemi a ogni cardinalità")
 
 
 def check_paths(X, y, splits, feature_names) -> None:
@@ -159,7 +159,7 @@ def check_paths(X, y, splits, feature_names) -> None:
     ).sort_index()
     table["forward_non_batte"] = table["forward"] >= table["esaustiva"] - TOLERANCE
     table["backward_non_batte"] = table["backward"] >= table["esaustiva"] - TOLERANCE
-    print("\ncoerenza dei tre percorsi (rmse medio per cardinalita')")
+    print("\ncoerenza dei tre percorsi (rmse medio per cardinalità)")
     print(table.to_string())
 
     if not table["forward_non_batte"].all() or not table["backward_non_batte"].all():

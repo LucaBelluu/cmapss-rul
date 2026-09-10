@@ -4,38 +4,38 @@ Ruolo nel progetto
     Compone in un'unica tabella i risultati dei quattro blocchi del confronto,
     dopo aver verificato che siano stati prodotti sulle stesse partizioni, e
     aggiunge la lettura appaiata fold per fold rispetto al modello migliore.
-    E' il primo passo della fase di chiusura e chiude la graduatoria.
+    È il primo passo della fase di chiusura e chiude la graduatoria.
 
     Lo script non legge l'insieme di verifica ufficiale e non ne dipende in
-    alcun modo. La separazione e' voluta: la graduatoria e la regola con cui
-    verra' letto l'insieme di verifica sono fissate e depositate prima che
+    alcun modo. La separazione è voluta: la graduatoria e la regola con cui
+    verrà letto l'insieme di verifica sono fissate e depositate prima che
     esista il codice che quell'insieme lo legge.
 
 Cosa riceve
     Gli artefatti dei quattro blocchi in `experiments/`. Nessun argomento
-    obbligatorio. Non ricalcola nessun modello: legge tabelle gia' prodotte.
+    obbligatorio. Non ricalcola nessun modello: legge tabelle già prodotte.
 
 Cosa produce
     In `experiments/final/`, per ciascun sottoinsieme:
 
-    - `{SUBSET}_partition_check.csv`, l'esito della verifica di identita' delle
+    - `{SUBSET}_partition_check.csv`, l'esito della verifica di identità delle
       partizioni fra i quattro blocchi;
     - `{SUBSET}_ranking.csv`, la graduatoria complessiva;
     - `{SUBSET}_paired.csv`, il confronto appaiato di ogni modello rispetto al
       primo in graduatoria.
 
 Regola di lettura della graduatoria
-    L'ordinamento e' sulla radice dell'errore quadratico medio in
+    L'ordinamento è sulla radice dell'errore quadratico medio in
     cross-validation, media sulle 15 partizioni di confronto. Due modelli il cui
-    divario e' inferiore a una dispersione fra fold non vengono ordinati: la
+    divario è inferiore a una dispersione fra fold non vengono ordinati: la
     graduatoria individua allora un gruppo di testa e non un vincitore. La
-    lettura appaiata accompagna quella principale e non la sostituisce, ed e'
+    lettura appaiata accompagna quella principale e non la sostituisce, ed è
     fuori dal materiale del corso.
 
-    I punteggi sono ottimisticamente distorti perche' la cross-validation non e'
-    annidata, e la distorsione non e' uniforme fra le righe: cresce con il
+    I punteggi sono ottimisticamente distorti perché la cross-validation non è
+    annidata, e la distorsione non è uniforme fra le righe: cresce con il
     numero di configurazioni valutate, che nella graduatoria varia da una a
-    centinaia di migliaia. La colonna che lo riporta e' parte della tabella e
+    centinaia di migliaia. La colonna che lo riporta è parte della tabella e
     non una nota a margine.
 
 Come si lancia

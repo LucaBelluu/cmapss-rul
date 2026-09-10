@@ -4,7 +4,7 @@ Ruolo nel progetto
     Ultimo stadio del confronto. Ricostruisce dagli artefatti della graduatoria
     ogni modello selezionato, lo riaddestra sull'intera parte di addestramento
     del sottoinsieme e lo valuta una sola volta sull'insieme di verifica
-    ufficiale. E' l'unico punto del progetto in cui `test_FD00X.txt` e
+    ufficiale. È l'unico punto del progetto in cui `test_FD00X.txt` e
     `RUL_FD00X.txt` entrano in una misura di prestazione.
 
 Cosa riceve
@@ -24,41 +24,41 @@ Cosa produce
       graduatoria in cross-validation e ciascuna lettura della verifica.
 
 Regola di lettura, fissata prima che questo file esistesse
-    La graduatoria del progetto e' quella in cross-validation. L'insieme di
+    La graduatoria del progetto è quella in cross-validation. L'insieme di
     verifica misura il trasferimento fuori campione e non riordina: ha un solo
-    punteggio per modello, senza misura di variabilita', e ordinare su di esso
+    punteggio per modello, senza misura di variabilità, e ordinare su di esso
     significherebbe ordinare su un numero di cui non si conosce l'incertezza.
-    La tabella prodotta conserva percio' l'ordine della graduatoria, e le
-    colonne di rango sono affiancate perche' lo spostamento sia leggibile senza
+    La tabella prodotta conserva perciò l'ordine della graduatoria, e le
+    colonne di rango sono affiancate perché lo spostamento sia leggibile senza
     che la tabella venga riordinata.
 
     Vengono letti tutti i modelli della graduatoria e le due baseline, non i
-    soli migliori, cosi' che il confronto fuori campione sia disponibile per
+    soli migliori, così che il confronto fuori campione sia disponibile per
     l'intera tabella e non per la parte che conviene.
 
     Le tre letture (tutti i cicli delle traiettorie troncate, solo ultimo ciclo,
     ultimo ciclo contro target non censurato) non sono confrontabili fra loro
-    ne' con l'errore in cross-validation, perche' riguardano popolazioni di
+    né con l'errore in cross-validation, perché riguardano popolazioni di
     cicli diverse. Il troncamento casuale sposta la composizione della verifica
-    verso la fase iniziale di vita, dove il target e' appiattito sulla soglia:
-    un errore assoluto piu' basso sulla verifica e' atteso e non indica un
+    verso la fase iniziale di vita, dove il target è appiattito sulla soglia:
+    un errore assoluto più basso sulla verifica è atteso e non indica un
     trasferimento migliore.
 
-Controllo di fedelta' incorporato
+Controllo di fedeltà incorporato
     Le due baseline e la regressione lineare multipla sono state valutate
     sull'insieme di verifica in fase di convalida del protocollo, e i loro
     punteggi sono registrati. Sono modelli deterministici e senza
     iperparametri: devono riprodursi. Uno scostamento significa che la catena
-    dati e' cambiata da allora, e in quel caso nessuna delle altre righe e'
+    dati è cambiata da allora, e in quel caso nessuna delle altre righe è
     interpretabile. Il controllo blocca l'esecuzione, ma solo dopo aver scritto
     gli artefatti: una corsa lunga che fallisce l'ultimo controllo non va persa.
 
 Esecuzioni parziali
-    Con `--models` la corsa e' parziale e non scrive su disco. Una
+    Con `--models` la corsa è parziale e non scrive su disco. Una
     riesecuzione limitata a un sottoinsieme dei modelli che sovrascrivesse la
     tabella completa lascerebbe la cartella apparentemente intatta e la tabella
-    incompleta, che e' un difetto gia' osservato sugli artefatti di un blocco e
-    che non lascia traccia perche' gli artefatti non sono versionati.
+    incompleta, che è un difetto già osservato sugli artefatti di un blocco e
+    che non lascia traccia perché gli artefatti non sono versionati.
 
 Come si lancia
     python -m scripts.run_holdout --subsets FD001 --models ols baseline_costante baseline_solo_ciclo
@@ -87,8 +87,8 @@ OUTPUT_DIR = PROJECT_ROOT / "experiments" / "final"
 
 # Punteggi registrati in fase di convalida del protocollo, sui soli modelli
 # deterministici e senza iperparametri. Sono arrotondati al centesimo di ciclo,
-# che e' la precisione con cui sono stati registrati, e la tolleranza del
-# confronto e' fissata di conseguenza: assorbe l'arrotondamento e nient'altro.
+# che è la precisione con cui sono stati registrati, e la tolleranza del
+# confronto è fissata di conseguenza: assorbe l'arrotondamento e nient'altro.
 REFERENCE_HOLDOUT = {
     ("FD001", "baseline_costante"): (35.34, 41.94),
     ("FD001", "baseline_solo_ciclo"): (23.69, 32.25),
@@ -111,9 +111,9 @@ def evaluate_one(record: dict, design) -> tuple[dict, np.ndarray, int, float]:
 
     Gli avvisi non vengono soppressi ma contati, con la stessa regola di lettura
     usata nei blocchi: sulla rete segnalano che l'ottimizzazione ha raggiunto il
-    numero di iterazioni previsto, che e' il meccanismo voluto; sui modelli a
-    margine segnalano una stima troncata dal tetto alle iterazioni, cioe' un
-    punteggio che non e' confrontabile con gli altri.
+    numero di iterazioni previsto, che è il meccanismo voluto; sui modelli a
+    margine segnalano una stima troncata dal tetto alle iterazioni, cioè un
+    punteggio che non è confrontabile con gli altri.
     """
     start = time.perf_counter()
     with warnings.catch_warnings(record=True) as caught:
@@ -133,7 +133,7 @@ def evaluate_one(record: dict, design) -> tuple[dict, np.ndarray, int, float]:
 
 
 def check_reference(table: pd.DataFrame, subset: str) -> pd.DataFrame:
-    """Confronta le righe gia' note con i punteggi registrati alla convalida."""
+    """Confronta le righe già note con i punteggi registrati alla convalida."""
     rows = []
     for (ref_subset, key), (all_cycles, last_cycle) in REFERENCE_HOLDOUT.items():
         if ref_subset != subset:
@@ -166,11 +166,11 @@ def rank_agreement(table: pd.DataFrame) -> pd.DataFrame:
 
     Calcolata sui soli modelli, escluse le baseline: queste ultime sono ultime
     in ogni lettura e la loro presenza gonfierebbe la concordanza misurata senza
-    dire nulla sull'ordine fra i modelli, che e' la quantita' di interesse.
+    dire nulla sull'ordine fra i modelli, che è la quantità di interesse.
 
-    E' una lettura descrittiva e fuori dal materiale del corso. Non e' una
+    È una lettura descrittiva e fuori dal materiale del corso. Non è una
     statistica test: i punteggi della verifica sono singoli e privi di misura di
-    variabilita', e la graduatoria del progetto resta quella in
+    variabilità, e la graduatoria del progetto resta quella in
     cross-validation.
     """
     models = table[~table["model"].isin(BASELINE_KEYS)]
@@ -199,10 +199,10 @@ def run_subset(subset: str, cap: int | None, only: list[str] | None) -> dict:
             raise KeyError(f"{subset}: {missing} non sono nella graduatoria")
         ranking = ranking[ranking["model"].isin(only)]
 
-    # La ricostruzione dell'intera graduatoria e' anche la verifica che il
+    # La ricostruzione dell'intera graduatoria è anche la verifica che il
     # registro nella repository sia coerente con tutti gli artefatti prodotti.
-    # Avviene prima di qualunque addestramento: se una configurazione non e'
-    # ricostruibile, il difetto va scoperto in un secondo e non a meta' di una
+    # Avviene prima di qualunque addestramento: se una configurazione non è
+    # ricostruibile, il difetto va scoperto in un secondo e non a metà di una
     # corsa lunga.
     records = rebuild_all(design, ranking)
 
@@ -256,7 +256,7 @@ def run_subset(subset: str, cap: int | None, only: list[str] | None) -> dict:
 
     table = pd.DataFrame(rows)
 
-    # L'ordine e' quello della graduatoria in cross-validation e non viene
+    # L'ordine è quello della graduatoria in cross-validation e non viene
     # cambiato. Le colonne di rango rendono leggibile lo spostamento senza
     # riordinare la tabella, che equivarrebbe a promuovere l'insieme di verifica
     # a criterio di ordinamento.
@@ -271,7 +271,7 @@ def run_subset(subset: str, cap: int | None, only: list[str] | None) -> dict:
     reference = check_reference(table, subset)
     agreement = rank_agreement(table)
 
-    print("\ncontrollo di fedelta' sui punteggi registrati alla convalida")
+    print("\ncontrollo di fedeltà sui punteggi registrati alla convalida")
     if reference.empty:
         print("nessuna riga di riferimento in questa esecuzione")
     else:
@@ -316,14 +316,14 @@ def main() -> None:
         if not reference.empty and not bool(reference["coincide"].all()):
             failures.append(reference[~reference["coincide"]])
 
-    # Il controllo fallisce dopo la scrittura e non prima: se la catena dati e'
+    # Il controllo fallisce dopo la scrittura e non prima: se la catena dati è
     # cambiata, la tabella prodotta serve a capire dove e quanto, e ripetere
     # l'intera corsa per rileggerla sarebbe uno spreco.
     if failures:
         detail = pd.concat(failures, ignore_index=True).to_string(index=False)
         raise AssertionError(
             "i punteggi dei modelli deterministici non riproducono quelli "
-            "registrati alla convalida del protocollo: la catena dati non e' "
+            "registrati alla convalida del protocollo: la catena dati non è "
             f"quella che ha prodotto la graduatoria\n{detail}"
         )
 

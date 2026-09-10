@@ -4,50 +4,50 @@ Ruolo nel progetto
     I quattro blocchi hanno prodotto ciascuno la propria tabella, valutata sulle
     stesse 15 partizioni sotto lo stesso protocollo. Questo modulo le compone in
     una graduatoria sola e verifica prima che la composizione sia legittima,
-    cioe' che le partizioni siano davvero identiche nei quattro blocchi. Non
+    cioè che le partizioni siano davvero identiche nei quattro blocchi. Non
     addestra modelli, non esegue lavoro computazionale e non legge in alcun modo
     l'insieme di verifica ufficiale.
 
 Cosa riceve
-    Gli artefatti gia' su disco: `experiments/<blocco>/{SUBSET}_comparison.csv`
+    Gli artefatti già su disco: `experiments/<blocco>/{SUBSET}_comparison.csv`
     e `experiments/<blocco>/{SUBSET}_cv_folds.csv`.
 
 Cosa produce
-    DataFrame con la verifica di identita' delle partizioni, la graduatoria
+    DataFrame con la verifica di identità delle partizioni, la graduatoria
     complessiva e il confronto appaiato fold per fold. Non scrive su disco: la
-    persistenza e' compito degli script di orchestrazione.
+    persistenza è compito degli script di orchestrazione.
 
-Perche' la verifica delle partizioni precede la graduatoria
+Perché la verifica delle partizioni precede la graduatoria
     Comporre quattro tabelle prodotte da esecuzioni diverse presuppone che i
     punteggi siano stati calcolati sugli stessi motori e sulle stesse righe. Il
-    presupposto non e' garantito dal fatto che il codice del protocollo sia
+    presupposto non è garantito dal fatto che il codice del protocollo sia
     unico: basterebbe una versione diversa della catena dati fra un'esecuzione e
-    l'altra per invalidarlo. La verifica esiste perche' le due baseline sono
+    l'altra per invalidarlo. La verifica esiste perché le due baseline sono
     ricalcolate in ogni blocco, quindi ogni blocco contiene quattro misure
-    indipendenti della stessa quantita' sulle stesse partizioni. Il confronto
-    dei conteggi di righe di ciascun fold e' la firma della partizione;
+    indipendenti della stessa quantità sulle stesse partizioni. Il confronto
+    dei conteggi di righe di ciascun fold è la firma della partizione;
     l'uguaglianza dei punteggi la corrobora. Se la verifica fallisce, la
-    graduatoria complessiva non e' costruibile e i blocchi restano leggibili
+    graduatoria complessiva non è costruibile e i blocchi restano leggibili
     solo separatamente.
 
 Confronto appaiato
     Le 15 partizioni sono le stesse per tutti i modelli, quindi la differenza
-    fra due modelli si puo' calcolare fold per fold invece che confrontando due
-    medie con le rispettive dispersioni. La difficolta' del fold, che e' la
-    componente dominante della dispersione riportata in tabella, e' comune ai
+    fra due modelli si può calcolare fold per fold invece che confrontando due
+    medie con le rispettive dispersioni. La difficoltà del fold, che è la
+    componente dominante della dispersione riportata in tabella, è comune ai
     due modelli e si elide nella differenza.
 
     La media delle differenze appaiate coincide per costruzione con la
-    differenza delle medie: non e' li' che sta l'informazione aggiuntiva. Quella
-    sta nella dispersione della differenza, che e' molto piu' piccola della
+    differenza delle medie: non è lì che sta l'informazione aggiuntiva. Quella
+    sta nella dispersione della differenza, che è molto più piccola della
     dispersione dei singoli punteggi quando i due modelli sbagliano sugli stessi
-    fold, e nella concordanza del segno, cioe' in quanti fold su 15 lo stesso
+    fold, e nella concordanza del segno, cioè in quanti fold su 15 lo stesso
     modello risulta migliore.
 
-    La lettura e' fuori dal materiale del corso e va dichiarata come tale.
+    La lettura è fuori dal materiale del corso e va dichiarata come tale.
     Resta una lettura descrittiva: non viene prodotta alcuna statistica test e
-    il rapporto fra media e dispersione della differenza non e' convertibile in
-    un livello di significativita', perche' i 15 fold condividono le righe di
+    il rapporto fra media e dispersione della differenza non è convertibile in
+    un livello di significatività, perché i 15 fold condividono le righe di
     addestramento e non sono osservazioni indipendenti. La regola di lettura
     adottata nei quattro blocchi resta quella fissata dal protocollo e questa
     lettura non la sostituisce.
@@ -74,7 +74,7 @@ BLOCKS: dict[str, str] = {
 
 BASELINE_KEYS = ("baseline_costante", "baseline_solo_ciclo")
 
-# Blocco da cui le baseline entrano nella graduatoria. La scelta e' arbitraria
+# Blocco da cui le baseline entrano nella graduatoria. La scelta è arbitraria
 # per costruzione: la verifica delle partizioni ha appena stabilito che le
 # quattro copie coincidono, e se non coincidessero la graduatoria non verrebbe
 # prodotta affatto.
@@ -83,10 +83,10 @@ BASELINE_SOURCE = "kernel_models"
 FOLD_KEYS = ["seed", "fold"]
 
 # Tolleranza sullo scarto fra le copie della stessa baseline in blocchi diversi.
-# Le esecuzioni sono deterministiche e lo scarto atteso e' nullo; il margine
+# Le esecuzioni sono deterministiche e lo scarto atteso è nullo; il margine
 # assorbe differenze di ordine delle operazioni in virgola mobile fra versioni
 # della catena, non differenze di partizione, che si manifesterebbero
-# sull'ordine dell'unita'.
+# sull'ordine dell'unità.
 PARTITION_TOLERANCE = 1e-6
 
 
@@ -117,7 +117,7 @@ def check_partitions(subset: str, folds: pd.DataFrame | None = None) -> pd.DataF
     Confronta, per ciascuna baseline e ciascun blocco, l'insieme dei fold, i
     conteggi di righe e di motori di ogni fold e il punteggio ottenuto, contro
     la copia del blocco di riferimento. Solleva un errore se qualcosa non
-    coincide: e' il presupposto della graduatoria complessiva, e un presupposto
+    coincide: è il presupposto della graduatoria complessiva, e un presupposto
     che fallisce va fermato qui e non attenuato in una nota.
     """
     folds = all_folds(subset) if folds is None else folds
@@ -181,7 +181,7 @@ def overall_folds(subset: str, folds: pd.DataFrame | None = None) -> pd.DataFram
     if duplicated.any():
         names = sorted(folds.loc[duplicated, "model"].unique())
         raise AssertionError(
-            f"{subset}: gli identificativi {names} compaiono in piu' di un blocco; "
+            f"{subset}: gli identificativi {names} compaiono in più di un blocco; "
             f"la graduatoria richiede che ogni modello abbia una sola riga"
         )
     return folds
@@ -190,15 +190,15 @@ def overall_folds(subset: str, folds: pd.DataFrame | None = None) -> pd.DataFram
 def overall_ranking(subset: str, comparisons: pd.DataFrame | None = None) -> pd.DataFrame:
     """Graduatoria complessiva sui quattro blocchi, ordinata sulla metrica di riferimento.
 
-    La colonna del divario dalla riga migliore e' ricalcolata rispetto al primo
+    La colonna del divario dalla riga migliore è ricalcolata rispetto al primo
     posto complessivo e non a quello del blocco di provenienza, con la stessa
     definizione usata dalle tabelle dei singoli blocchi.
 
-    La colonna `n_configurations` viene mantenuta perche' e' la quantita' con
+    La colonna `n_configurations` viene mantenuta perché è la quantità con
     cui si legge la distorsione ottimistica di ciascuna riga: la
-    cross-validation non e' annidata, e la distorsione cresce con il numero di
-    configurazioni valutate sulle stesse partizioni su cui il punteggio e' poi
-    riportato. Le righe della graduatoria non sono a parita' di questo fattore.
+    cross-validation non è annidata, e la distorsione cresce con il numero di
+    configurazioni valutate sulle stesse partizioni su cui il punteggio è poi
+    riportato. Le righe della graduatoria non sono a parità di questo fattore.
     """
     table = _drop_duplicate_baselines(all_comparisons(subset) if comparisons is None else comparisons)
     table["blocco"] = table["block"].map(BLOCKS)
@@ -229,16 +229,16 @@ def paired_differences(
 ) -> pd.DataFrame:
     """Differenze fold per fold di ciascun modello rispetto a un modello di riferimento.
 
-    Valore positivo: il modello sbaglia piu' del riferimento su quel fold.
+    Valore positivo: il modello sbaglia più del riferimento su quel fold.
 
     `differenza_media` coincide con la differenza fra le medie riportate in
-    graduatoria ed e' inclusa come controllo di coerenza. Le colonne che portano
-    informazione nuova sono `differenza_std`, che e' molto minore della
+    graduatoria ed è inclusa come controllo di coerenza. Le colonne che portano
+    informazione nuova sono `differenza_std`, che è molto minore della
     dispersione dei punteggi quando i due modelli sbagliano sugli stessi fold, e
     `fold_peggiori`, che conta su quanti fold il segno si conferma.
 
-    `differenza_in_dispersioni` e' il rapporto fra le due precedenti. Non e' una
-    statistica test e non e' convertibile in un livello di significativita': i
+    `differenza_in_dispersioni` è il rapporto fra le due precedenti. Non è una
+    statistica test e non è convertibile in un livello di significatività: i
     fold condividono le righe di addestramento e non sono indipendenti.
     """
     wide = folds.pivot_table(index=FOLD_KEYS, columns="model", values="rmse")

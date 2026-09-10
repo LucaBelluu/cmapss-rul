@@ -5,34 +5,34 @@ Ruolo nel progetto
     configurazione di un modello valutando la griglia sulle partizioni del seme
     dedicato alla ricerca, e restituisce la griglia intera oltre al vincitore.
     Il secondo stadio, la rivalutazione della configurazione selezionata su
-    tutte le partizioni di confronto, e' in `src.experiment`.
+    tutte le partizioni di confronto, è in `src.experiment`.
 
 Cosa riceve
-    Uno stimatore gia' composto con il pre-processing, la sua griglia, la
+    Uno stimatore già composto con il pre-processing, la sua griglia, la
     matrice di progetto e le partizioni della ricerca.
 
 Cosa produce
     La configurazione selezionata, la tabella completa della griglia con le tre
     metriche per ciascuna configurazione, e l'esito del controllo sui bordi.
 
-Perche' la griglia intera e non il solo vincitore
+Perché la griglia intera e non il solo vincitore
     Il punteggio del vincitore non dice se il minimo sia netto o se la curva
-    sia piatta, e la seconda situazione e' frequente sui modelli regolarizzati.
-    La forma della curva e' parte del commento di ciascun modello richiesto
+    sia piatta, e la seconda situazione è frequente sui modelli regolarizzati.
+    La forma della curva è parte del commento di ciascun modello richiesto
     dalla consegna, e va conservata come artefatto invece di essere ricalcolata
     a posteriori.
 
 Controllo sui bordi
     Se la configurazione selezionata cade su un estremo di un parametro
-    ordinato, il minimo potrebbe trovarsi fuori dalla griglia. Il controllo e'
+    ordinato, il minimo potrebbe trovarsi fuori dalla griglia. Il controllo è
     eseguito e registrato sempre, non solo quando il risultato sembra
-    sospetto: e' la regola fissata prima di vedere i numeri.
+    sospetto: è la regola fissata prima di vedere i numeri.
 
 Convergenza
     I modelli stimati per discesa coordinata possono non convergere entro il
     numero massimo di iterazioni su alcune configurazioni della griglia. Le
     mancate convergenze sono contate e riportate: una configurazione non
-    convergente produce un punteggio che non e' confrontabile con gli altri, e
+    convergente produce un punteggio che non è confrontabile con gli altri, e
     ignorare l'avviso significherebbe lasciarla entrare in graduatoria senza
     che nulla lo segnali.
 
@@ -40,18 +40,18 @@ Configurazioni non valutabili
     Quando l'adattamento o la predizione di una configurazione solleva
     un'eccezione, la ricerca su griglia di scikit-learn assegna a quella
     configurazione un punteggio non definito e prosegue. La configurazione
-    sparisce cosi' dalla graduatoria senza lasciare traccia nel risultato: la
+    sparisce così dalla graduatoria senza lasciare traccia nel risultato: la
     ricerca riporta un vincitore regolare, e nulla distingue una griglia
-    valutata per intero da una in cui una parte non e' mai stata provata. La
-    conseguenza sul protocollo e' diretta, perche' il controllo sui bordi
-    diventa privo di significato se la zona verso cui la griglia e' stata
-    estesa e' proprio quella che non viene valutata.
+    valutata per intero da una in cui una parte non è mai stata provata. La
+    conseguenza sul protocollo è diretta, perché il controllo sui bordi
+    diventa privo di significato se la zona verso cui la griglia è stata
+    estesa è proprio quella che non viene valutata.
 
-    Le configurazioni con punteggio non definito sono percio' contate e
+    Le configurazioni con punteggio non definito sono perciò contate e
     riportate insieme al resto. Il punteggio non definito non viene
     trasformato in errore: un'eccezione interromperebbe l'intero esperimento
     per una singola configurazione, mentre qui la ricerca resta utilizzabile e
-    il fatto e' registrato negli artefatti.
+    il fatto è registrato negli artefatti.
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ def _boundary_parameters(param_grid: dict, best_params: dict) -> list[str]:
     """Parametri la cui configurazione selezionata cade su un estremo della griglia.
 
     Il controllo riguarda i soli parametri con almeno tre valori ordinabili:
-    su una griglia di due valori l'estremo e' inevitabile e l'avviso sarebbe
+    su una griglia di due valori l'estremo è inevitabile e l'avviso sarebbe
     privo di contenuto.
     """
     flagged = []
@@ -160,7 +160,7 @@ def grid_search(
     table = table[keep].copy()
 
     # I punteggi di scikit-learn sono orientati in modo che valori maggiori
-    # siano migliori: errore e errore assoluto sono percio' restituiti negati e
+    # siano migliori: errore e errore assoluto sono perciò restituiti negati e
     # vengono riportati alla loro scala naturale.
     for metric in ("rmse", "mae"):
         table[f"mean_test_{metric}"] = -table[f"mean_test_{metric}"]

@@ -3,10 +3,10 @@
 Ruolo nel progetto
     Compone i due stadi previsti dal protocollo (ricerca della configurazione
     sulle partizioni del seme dedicato, rivalutazione della sola configurazione
-    selezionata su tutte le partizioni di confronto) ed e' l'unico punto in cui
-    questa composizione e' scritta. Ogni blocco del confronto passa da qui:
+    selezionata su tutte le partizioni di confronto) ed è l'unico punto in cui
+    questa composizione è scritta. Ogni blocco del confronto passa da qui:
     modelli valutati sotto procedure diverse non sarebbero confrontabili, e la
-    parita' di trattamento va garantita dal codice e non dalla disciplina di
+    parità di trattamento va garantita dal codice e non dalla disciplina di
     chi lo usa.
 
 Cosa riceve
@@ -18,15 +18,15 @@ Cosa produce
     Una struttura `ModelRun` con la configurazione selezionata, le metriche per
     fold, il riepilogo su media e dispersione, i parametri leggibili del
     modello e, per i modelli con iperparametri, la griglia completa. Non scrive
-    su disco: la persistenza e' compito degli script di orchestrazione, come
+    su disco: la persistenza è compito degli script di orchestrazione, come
     per il protocollo.
 
 I due stadi
     La ricerca opera sulle 5 partizioni del seme di ricerca, un solo passaggio.
     La configurazione selezionata viene poi rivalutata sulle 15 partizioni dei
     tre semi di confronto, e sono quei 15 punteggi a produrre la media e la
-    dispersione riportate in tabella. La cross-validation non e' annidata: il
-    punteggio riportato e' ottimisticamente distorto, e la stima non
+    dispersione riportate in tabella. La cross-validation non è annidata: il
+    punteggio riportato è ottimisticamente distorto, e la stima non
     condizionata dalla selezione proviene dall'insieme di verifica ufficiale,
     che non viene letto qui.
 
@@ -42,11 +42,11 @@ Selezione delle variabili
     sottoinsieme selezionato diventa una pipeline a colonne fisse, e questa
     viene rivalutata sulle partizioni di confronto. La distorsione ottimistica
     di questo trattamento cresce con il numero di configurazioni esplorate, ed
-    e' quindi maggiore per la ricerca esaustiva che per una griglia di
+    è quindi maggiore per la ricerca esaustiva che per una griglia di
     cinquanta valori. `nested_selection_check` la misura, rifacendo la
     selezione dentro ciascun fold di confronto: il divario fra i due punteggi
-    e' la stima diretta dell'ottimismo introdotto dalla selezione. Quel
-    risultato e' diagnostico e non entra in graduatoria.
+    è la stima diretta dell'ottimismo introdotto dalla selezione. Quel
+    risultato è diagnostico e non entra in graduatoria.
 """
 
 from __future__ import annotations
@@ -70,9 +70,9 @@ class ModelRun:
     """Esito completo dell'esperimento su un modello.
 
     estimator
-        La pipeline con la configurazione selezionata, non adattata. E' l'
+        La pipeline con la configurazione selezionata, non adattata. È l'
         oggetto da riaddestrare sull'intera parte di addestramento quando la
-        graduatoria verra' chiusa e l'insieme di verifica ufficiale letto.
+        graduatoria verrà chiusa e l'insieme di verifica ufficiale letto.
     """
 
     key: str
@@ -103,12 +103,12 @@ def baseline_runs(design, comparison_splits) -> list[ModelRun]:
     """Le due baseline, valutate sulle stesse partizioni degli altri modelli.
 
     Sono ricalcolate a ogni blocco e non riprese dagli artefatti di un altro:
-    la tabella di ciascun blocco e' cosi' prodotta interamente da una sola
-    esecuzione, e non dalla composizione di esecuzioni diverse. Il costo e'
-    trascurabile e il guadagno e' che ogni tabella si legge da sola.
+    la tabella di ciascun blocco è così prodotta interamente da una sola
+    esecuzione, e non dalla composizione di esecuzioni diverse. Il costo è
+    trascurabile e il guadagno è che ogni tabella si legge da sola.
 
-    La predizione costante e' il pavimento assoluto, la regressione sul solo
-    numero di ciclo e' il pavimento informativo: il guadagno di un modello si
+    La predizione costante è il pavimento assoluto, la regressione sul solo
+    numero di ciclo è il pavimento informativo: il guadagno di un modello si
     legge rispetto alla seconda.
     """
     from src.baselines import all_baselines
@@ -175,7 +175,7 @@ def run_grid_model(
     summary["config"] = _config_label(config)
 
     # I parametri leggibili si estraggono dal modello riaddestrato sull'intera
-    # parte di addestramento. Non usa in alcun modo l'insieme di verifica, ed e'
+    # parte di addestramento. Non usa in alcun modo l'insieme di verifica, ed è
     # il modello di cui si commenta il comportamento: uno dei quindici modelli
     # di fold sarebbe una scelta arbitraria fra quindici stime diverse.
     fitted = clone(selected).fit(X, np.asarray(y))
@@ -301,10 +301,10 @@ def nested_selection_check(
     sola parte di addestramento di quella partizione, con una cross-validation
     interna sui suoi motori, e il sottoinsieme risultante viene valutato sulla
     parte di verifica, che non ha partecipato alla scelta. Il punteggio medio
-    che ne risulta e' privo della distorsione della selezione, e il suo divario
-    dal punteggio riportato in tabella e' la stima di quella distorsione.
+    che ne risulta è privo della distorsione della selezione, e il suo divario
+    dal punteggio riportato in tabella è la stima di quella distorsione.
 
-    Il risultato e' diagnostico: non entra in graduatoria, perche' i quindici
+    Il risultato è diagnostico: non entra in graduatoria, perché i quindici
     fold selezionano sottoinsiemi diversi e non identificano un modello di cui
     leggere le variabili.
     """
@@ -340,8 +340,8 @@ def coefficient_path(estimator_factory, values, X, y, feature_names, param: str 
 
     I coefficienti sono stimati sull'intera parte di addestramento, come nel
     laboratorio: il percorso descrive il comportamento del modello al variare
-    della penalizzazione e non e' una stima di prestazione, quindi non richiede
-    partizionamento. La standardizzazione e' adattata una sola volta sulla
+    della penalizzazione e non è una stima di prestazione, quindi non richiede
+    partizionamento. La standardizzazione è adattata una sola volta sulla
     stessa matrice, coerentemente.
     """
     from sklearn.preprocessing import StandardScaler
@@ -359,25 +359,25 @@ def coefficient_path(estimator_factory, values, X, y, feature_names, param: str 
 
 
 def gap_in_dispersions(mean: pd.Series, std: pd.Series) -> pd.Series:
-    """Distanza dalla riga migliore in unita' di dispersione fra fold.
+    """Distanza dalla riga migliore in unità di dispersione fra fold.
 
-    Attende le due colonne gia' ordinate sulla metrica di riferimento: la riga
-    migliore e' la prima. Due modelli il cui divario e' inferiore a una
-    dispersione non sono distinguibili sotto questo protocollo, e la quantita'
+    Attende le due colonne già ordinate sulla metrica di riferimento: la riga
+    migliore è la prima. Due modelli il cui divario è inferiore a una
+    dispersione non sono distinguibili sotto questo protocollo, e la quantità
     rende leggibile questa condizione invece di lasciarla dedurre dal confronto
     fra medie e deviazioni standard.
 
     La dispersione usata come scala combina quella della riga e quella della
-    riga migliore, e non e' quella della sola riga: dividendo ciascun divario
-    per la propria dispersione, un modello peggiore ma piu' stabile
-    risulterebbe molto piu' vicino di uno migliore e piu' variabile. La scala
-    combinata attenua l'effetto ma non lo annulla, e la colonna non e' quindi
-    monotona nell'errore: fra righe di dispersione molto diversa puo' invertire
+    riga migliore, e non è quella della sola riga: dividendo ciascun divario
+    per la propria dispersione, un modello peggiore ma più stabile
+    risulterebbe molto più vicino di uno migliore e più variabile. La scala
+    combinata attenua l'effetto ma non lo annulla, e la colonna non è quindi
+    monotona nell'errore: fra righe di dispersione molto diversa può invertire
     l'ordine, come accade fra la baseline sul solo numero di ciclo e il modello
-    peggiore del confronto. L'ordinamento e' quello della colonna dell'errore;
-    questa e' una distanza, non un ordine.
+    peggiore del confronto. L'ordinamento è quello della colonna dell'errore;
+    questa è una distanza, non un ordine.
 
-    Non e' un errore standard e non consente test di significativita': i fold
+    Non è un errore standard e non consente test di significatività: i fold
     condividono le righe di addestramento e non sono indipendenti.
     """
     best_mean = mean.iloc[0]
@@ -390,7 +390,7 @@ def comparison_table(runs: list[ModelRun]) -> pd.DataFrame:
     """Tabella di confronto del blocco, ordinata sulla metrica di riferimento.
 
     La colonna `divario_in_dispersioni` riporta la distanza dalla riga migliore
-    in unita' di dispersione fra fold, con la definizione di
+    in unità di dispersione fra fold, con la definizione di
     `gap_in_dispersions`.
     """
     table = pd.DataFrame([run.summary for run in runs])

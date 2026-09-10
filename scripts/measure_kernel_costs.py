@@ -9,14 +9,14 @@ Ruolo nel progetto
     supporto sotto il protocollo del progetto poggia sui numeri prodotti qui.
     Nessun risultato prodotto in questo script entra in graduatoria.
 
-Perche' questa sonda e' piu' articolata di quella del blocco ad albero
+Perché questa sonda è più articolata di quella del blocco ad albero
     Il costo di adattamento della regressione a vettori di supporto con kernel
     cresce fra il quadrato e il cubo del numero di righe, e le righe di
     addestramento per fold sono 16.505 su FD001 e 19.776 su FD003. Un solo
     numero misurato a dimensione piena non basta a decidere: serve sapere come
     il costo cresce nelle righe, quale angolo della griglia lo fa esplodere e
-    quanto pesa la dimensione della cache del kernel, perche' sono queste tre
-    quantita' a distinguere le alternative fra cui la decisione va presa.
+    quanto pesa la dimensione della cache del kernel, perché sono queste tre
+    quantità a distinguere le alternative fra cui la decisione va presa.
 
 Cosa riceve
     I file grezzi in `data/raw/`, attraverso la catena `src.data`, `src.target`,
@@ -25,7 +25,7 @@ Cosa riceve
 Cosa produce
     Un artefatto per sottoinsieme, riscritto conservando i blocchi non
     rieseguiti: un'esecuzione parziale sostituisce le righe dei soli blocchi che
-    ha ricalcolato e lascia intatte le altre, cosi' che una misura lunga gia'
+    ha ricalcolato e lascia intatte le altre, così che una misura lunga già
     fatta non vada persa lanciando un blocco aggiunto dopo.
 
     In `experiments/kernel_models/`, per ciascun sottoinsieme:
@@ -39,30 +39,30 @@ Cosa produce
       mancata convergenza;
 
     e, una volta sola, `environment.csv` con il numero di processori, la memoria
-    e le versioni con cui le misure sono state prese, che sono le quantita' da
+    e le versioni con cui le misure sono state prese, che sono le quantità da
     cui la durata di un esperimento si ricava moltiplicando.
 
 I quattro blocchi di misura
     `ladder` misura il tempo di adattamento di una configurazione centrale al
-    crescere del numero di righe, su ciascuno dei tre kernel. E' il blocco da
+    crescere del numero di righe, su ciascuno dei tre kernel. È il blocco da
     cui si legge l'esponente empirico di crescita e quindi se il modello sia
     praticabile a dimensione piena.
 
     `sensitivity` misura, a righe fissate, l'effetto di ciascun iperparametro
-    lungo un asse per volta. Il costo di una griglia non e' il numero di
-    configurazioni moltiplicato per un costo medio: e' dominato dall'angolo
-    piu' oneroso, e questo blocco individua quale sia.
+    lungo un asse per volta. Il costo di una griglia non è il numero di
+    configurazioni moltiplicato per un costo medio: è dominato dall'angolo
+    più oneroso, e questo blocco individua quale sia.
 
     `cache` confronta tre dimensioni della cache del kernel a righe fissate. La
     matrice del kernel a dimensione piena occuperebbe circa 2,2 GB su FD001,
     quindi il valore predefinito della libreria (200 MB) non la contiene e parte
     delle colonne viene ricalcolata a ogni passaggio. La dimensione della cache
-    e' un parametro di implementazione e non del modello: cambiarla non altera
+    è un parametro di implementazione e non del modello: cambiarla non altera
     la funzione stimata e non introduce quindi una differenza di condizioni fra
     modelli.
 
-    `confirm` adatta una volta sola, a dimensione piena, l'angolo piu' oneroso
-    fra quelli che la griglia conterra' plausibilmente. E' la misura che rende
+    `confirm` adatta una volta sola, a dimensione piena, l'angolo più oneroso
+    fra quelli che la griglia conterrà plausibilmente. È la misura che rende
     la decisione fondata su un numero osservato invece che su una estrapolazione;
     l'estrapolazione del blocco `ladder` serve soltanto a decidere se valga la
     pena tentarla.
@@ -71,7 +71,7 @@ I quattro blocchi di misura
 
     `degree` misura il kernel polinomiale al variare del grado sull'angolo in cui
     la sua stima si degrada. Il prodotto interno fra due righe standardizzate a
-    diciotto colonne e' dell'ordine delle diciotto unita', quindi il valore del
+    diciotto colonne è dell'ordine delle diciotto unità, quindi il valore del
     kernel cresce come quel prodotto moltiplicato per `gamma` ed elevato al
     grado: con `gamma` alto e grado alto la matrice del kernel assume valori di
     ampiezza tale che l'ottimizzazione richiede milioni di iterazioni. Il blocco
@@ -80,17 +80,17 @@ I quattro blocchi di misura
 
     `curve` misura la traiettoria della perdita del percettrone al crescere
     delle iterazioni, con la stessa costruzione incrementale usata per la curva
-    di saturazione degli insiemi: le iterazioni sono aggiunte a una rete gia'
+    di saturazione degli insiemi: le iterazioni sono aggiunte a una rete già
     addestrata, quindi l'intera curva costa quanto il solo adattamento con il
     numero massimo di iterazioni. Serve a fissare il numero di iterazioni invece
-    di cercarlo, per la stessa ragione per cui il numero di alberi e' fissato:
+    di cercarlo, per la stessa ragione per cui il numero di alberi è fissato:
     non governa un compromesso ma la convergenza di una procedura.
 
-    I blocchi successivi al primo non ripetono le misure che il primo ha gia'
+    I blocchi successivi al primo non ripetono le misure che il primo ha già
     dichiarato fuori portata: un kernel che non termina entro il limite sulla
-    configurazione centrale non termina nemmeno su una piu' onerosa alla stessa
+    configurazione centrale non termina nemmeno su una più onerosa alla stessa
     dimensione, e ritentarlo consumerebbe il limite di tempo una volta per
-    configurazione senza aggiungere informazione. L'esclusione e' registrata
+    configurazione senza aggiungere informazione. L'esclusione è registrata
     riga per riga e non lasciata implicita nell'assenza della misura.
 
 Sottocampionamento per diradamento
@@ -99,30 +99,30 @@ Sottocampionamento per diradamento
     un motore sono cicli consecutivi della stessa traiettoria e sono quasi
     identiche fra loro, quindi il diradamento rimuove ripetizioni e mantiene
     tutti i motori e l'intera escursione del target, che un'estrazione casuale
-    conserverebbe solo in media. E' anche la stessa operazione che il blocco
+    conserverebbe solo in media. È anche la stessa operazione che il blocco
     potrebbe adottare come compromesso se il costo a dimensione piena risultasse
-    proibitivo: misurarne qui il costo e l'errore la rende una quantita'
+    proibitivo: misurarne qui il costo e l'errore la rende una quantità
     osservata e non un'ipotesi.
 
 Protezione contro le misure che non terminano
-    Ogni adattamento e' eseguito in un processo separato con un limite di tempo.
-    La libreria che stima il modello e' codice nativo che non restituisce il
+    Ogni adattamento è eseguito in un processo separato con un limite di tempo.
+    La libreria che stima il modello è codice nativo che non restituisce il
     controllo all'interprete durante l'ottimizzazione, quindi un limite di tempo
     interno al processo non verrebbe applicato: una configurazione che non
     converge bloccherebbe la sonda a tempo indeterminato. Il superamento del
-    limite non e' un errore da correggere ma un esito della misura, ed e'
+    limite non è un errore da correggere ma un esito della misura, ed è
     registrato come tale.
 
     La scala si interrompe anche in anticipo: prima di tentare un punto, il suo
-    costo e' proiettato dai due punti gia' misurati, e se supera il budget il
+    costo è proiettato dai due punti già misurati, e se supera il budget il
     punto non viene tentato e la riga lo registra. La proiezione decide soltanto
     se tentare una misura, non sostituisce mai un valore misurato.
 
 Errore riportato
     L'errore sulla partizione accompagna ogni misura come controllo di
-    plausibilita' della catena e come lettura del costo del diradamento. Non e'
+    plausibilità della catena e come lettura del costo del diradamento. Non è
     un criterio con cui fissare gli estremi delle griglie: scegliere un
-    intervallo perche' contiene il valore migliore osservato qui sarebbe una
+    intervallo perché contiene il valore migliore osservato qui sarebbe una
     selezione fatta prima e fuori dal protocollo.
 
 Come si lancia
@@ -131,7 +131,7 @@ Come si lancia
     python -m scripts.measure_kernel_costs --subsets FD001 --blocks ladder
     python -m scripts.measure_kernel_costs --timeout 1200 --budget 2400
 
-    La modalita' `--quick` riduce la scala ai punti piccoli e i limiti di tempo,
+    La modalità `--quick` riduce la scala ai punti piccoli e i limiti di tempo,
     e serve a convalidare la catena prima di lanciare la misura vera.
 """
 
@@ -156,7 +156,7 @@ from src.target import RUL_CAP
 
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "kernel_models"
 
-# Seme degli stimatori che ne richiedono uno. E' distinto dai semi del
+# Seme degli stimatori che ne richiedono uno. È distinto dai semi del
 # protocollo, che governano il partizionamento: qui riguarda l'inizializzazione
 # dei pesi della rete, non quali motori finiscono da che parte.
 MODEL_SEED = 0
@@ -165,9 +165,9 @@ MODEL_SEED = 0
 # intervalli plausibili e non sono una griglia: servono a tenere fissa la
 # configurazione mentre variano le righe.
 #
-# `epsilon` non e' trasferibile dal laboratorio, che lo usa a 0,1 su un target
-# con deviazione standard di circa 1,15, cioe' a circa il 9 per cento della
-# dispersione del target. Qui il target e' in cicli e ha deviazione standard di
+# `epsilon` non è trasferibile dal laboratorio, che lo usa a 0,1 su un target
+# con deviazione standard di circa 1,15, cioè a circa il 9 per cento della
+# dispersione del target. Qui il target è in cicli e ha deviazione standard di
 # circa 41: lo stesso rapporto vale circa 4 cicli. Il parametro governa la
 # larghezza della banda entro cui l'errore non viene penalizzato, quindi il
 # numero di osservazioni che diventano vettori di supporto, quindi il costo.
@@ -176,47 +176,47 @@ CENTER = {"C": 10.0, "epsilon": 4.0, "gamma": 0.06, "degree": 3}
 
 # `gamma` centrale corrisponde all'impostazione predefinita della libreria su
 # questa matrice: con dati standardizzati la varianza media vale uno e il
-# valore vale 1 diviso il numero di colonne, cioe' circa 0,056 su 18 variabili.
+# valore vale 1 diviso il numero di colonne, cioè circa 0,056 su 18 variabili.
 KERNELS = ("linear", "rbf", "poly")
 
 # Tetto alle iterazioni dell'ottimizzatore. Senza tetto una configurazione mal
 # condizionata prosegue fino alla tolleranza per un tempo indeterminato: la
 # misura del kernel polinomiale con gamma alto ha richiesto quarantaquattro
-# milioni di iterazioni su un terzo delle righe. Il valore e' scelto sopra il
-# fabbisogno delle configurazioni che convergono regolarmente, la piu' esigente
-# delle quali ne ha richieste tredici milioni a dimensione piena, cosi' che il
-# tetto tagli il caso patologico e non quelli legittimi. E' lo stesso
-# trattamento gia' applicato ai modelli stimati per discesa coordinata, dove il
-# numero massimo di iterazioni e' alzato e le mancate convergenze residue sono
-# contate anziche' soppresse.
+# milioni di iterazioni su un terzo delle righe. Il valore è scelto sopra il
+# fabbisogno delle configurazioni che convergono regolarmente, la più esigente
+# delle quali ne ha richieste tredici milioni a dimensione piena, così che il
+# tetto tagli il caso patologico e non quelli legittimi. È lo stesso
+# trattamento già applicato ai modelli stimati per discesa coordinata, dove il
+# numero massimo di iterazioni è alzato e le mancate convergenze residue sono
+# contate anziché soppresse.
 SVR_MAX_ITER = 20_000_000
 
-# Punti della scala. `None` e' la dimensione piena della parte di addestramento
+# Punti della scala. `None` è la dimensione piena della parte di addestramento
 # della partizione.
 LADDER_ROWS = (1000, 2000, 4000, 8000, 12000, None)
 QUICK_LADDER_ROWS = (500, 1000, 2000)
 
-# Righe a cui sono misurate la sensibilita' agli iperparametri e la cache.
+# Righe a cui sono misurate la sensibilità agli iperparametri e la cache.
 SENSITIVITY_ROWS = 4000
 CACHE_ROWS = 8000
 CACHE_SIZES = (200, 500, 1000)
 
-# Assi della sensibilita'. Un asse per volta attorno alla configurazione
+# Assi della sensibilità. Un asse per volta attorno alla configurazione
 # centrale: la misura serve a individuare quale parametro governa il costo, non
-# a esplorare la griglia, che non e' ancora fissata.
+# a esplorare la griglia, che non è ancora fissata.
 SENSITIVITY_AXES = {
     "C": [1.0, 10.0, 100.0],
     "epsilon": [1.0, 4.0, 16.0],
     "gamma": [0.01, 0.06, 0.5],
 }
 
-# Angolo oneroso plausibile: penalizzazione alta e banda stretta, cioe' molti
+# Angolo oneroso plausibile: penalizzazione alta e banda stretta, cioè molti
 # vettori di supporto e ottimizzazione lunga.
 CONFIRM = {"C": 100.0, "epsilon": 1.0, "gamma": 0.06, "degree": 3}
 
 # Configurazioni del percettrone. Le architetture sono quelle del laboratorio
-# piu' due piu' larghe, perche' la matrice qui ha due ordini di grandezza di
-# righe in piu' e la capacita' del laboratorio potrebbe non bastare.
+# più due più larghe, perché la matrice qui ha due ordini di grandezza di
+# righe in più e la capacità del laboratorio potrebbe non bastare.
 MLP_SPECS = (
     ((32,), 1e-3),
     ((64, 32), 1e-3),
@@ -242,9 +242,9 @@ DEGREES = (2, 3, 4)
 def thin(indices: np.ndarray, groups: np.ndarray, target_rows: int | None) -> np.ndarray:
     """Sottocampiona un insieme di righe tenendo un ciclo ogni k dentro ogni motore.
 
-    Il passo e' calcolato sul rapporto fra righe disponibili e righe richieste,
-    quindi il numero di righe restituito e' approssimativamente quello chiesto e
-    non esattamente quello: i motori hanno durate diverse e il passo e' intero.
+    Il passo è calcolato sul rapporto fra righe disponibili e righe richieste,
+    quindi il numero di righe restituito è approssimativamente quello chiesto e
+    non esattamente quello: i motori hanno durate diverse e il passo è intero.
     """
     indices = np.sort(np.asarray(indices))
     if target_rows is None or target_rows >= len(indices):
@@ -258,8 +258,8 @@ def thin(indices: np.ndarray, groups: np.ndarray, target_rows: int | None) -> np
 def build_estimator(spec: dict):
     """Costruisce lo stimatore nudo di una misura, dalla sua specifica.
 
-    Lo stimatore e' costruito dentro il processo che lo adatta e non passato
-    gia' costruito: la specifica e' un dizionario di tipi elementari, che
+    Lo stimatore è costruito dentro il processo che lo adatta e non passato
+    già costruito: la specifica è un dizionario di tipi elementari, che
     attraversa il confine fra processi senza dipendere da come la libreria
     serializza i propri oggetti.
     """
@@ -282,7 +282,7 @@ def build_estimator(spec: dict):
         # Stima in forma primale della sola variante a kernel lineare. Non
         # compare nel laboratorio e va segnalata come tale: risolve lo stesso
         # problema con un ottimizzatore il cui costo cresce linearmente nelle
-        # righe, e penalizza anche l'intercetta, quindi non e' lo stesso modello.
+        # righe, e penalizza anche l'intercetta, quindi non è lo stesso modello.
         return LinearSVR(
             C=spec["C"],
             epsilon=spec["epsilon"],
@@ -292,9 +292,9 @@ def build_estimator(spec: dict):
     if kind == "mlp":
         from sklearn.neural_network import MLPRegressor
 
-        # `early_stopping` resta disattivato. La sua partizione interna e'
+        # `early_stopping` resta disattivato. La sua partizione interna è
         # costruita mescolando le righe, quindi collocherebbe cicli adiacenti
-        # dello stesso motore da entrambe le parti: e' esattamente la
+        # dello stesso motore da entrambe le parti: è esattamente la
         # contaminazione che il vincolo di gruppo del protocollo esiste per
         # escludere.
         return MLPRegressor(
@@ -351,7 +351,7 @@ def _fit_once(spec: dict, X_train, y_train, X_valid, y_valid) -> dict:
 def _fit_curve(spec: dict, X_train, y_train, X_valid, y_valid) -> dict:
     """Traiettoria della perdita e dell'errore al crescere delle iterazioni.
 
-    Le iterazioni sono aggiunte a una rete gia' addestrata invece di
+    Le iterazioni sono aggiunte a una rete già addestrata invece di
     riaddestrarla a ogni punto, quindi l'intera curva costa quanto il solo
     adattamento con il numero massimo di iterazioni e i punti descrivono la
     crescita di una sola rete e non il confronto fra reti diverse.
@@ -385,7 +385,7 @@ def _fit_curve(spec: dict, X_train, y_train, X_valid, y_valid) -> dict:
         record.update(regression_metrics(y_valid, pipeline.predict(X_valid)))
         curve.append(record)
 
-        # La rete si e' fermata da sola prima del punto richiesto: i punti
+        # La rete si è fermata da sola prima del punto richiesto: i punti
         # successivi ripeterebbero lo stesso stato.
         if model.n_iter_ <= previous:
             break
@@ -398,17 +398,17 @@ def _worker(spec, X_train, y_train, X_valid, y_valid, queue) -> None:
     try:
         run = _fit_curve if spec.get("checkpoints") else _fit_once
         queue.put(run(spec, X_train, y_train, X_valid, y_valid))
-    except Exception as error:  # la misura fallita e' un esito, non un arresto
+    except Exception as error:  # la misura fallita è un esito, non un arresto
         queue.put({"status": f"errore: {type(error).__name__}"})
 
 
 def measure(spec: dict, data: tuple, timeout: float) -> dict:
     """Esegue una misura in un processo separato, con un limite di tempo.
 
-    Il limite non puo' essere applicato dentro il processo che adatta: la
+    Il limite non può essere applicato dentro il processo che adatta: la
     stima avviene in codice nativo che non restituisce il controllo
     all'interprete, quindi un segnale resterebbe in attesa fino alla fine
-    dell'adattamento, cioe' proprio fino al momento in cui non serve piu'.
+    dell'adattamento, cioè proprio fino al momento in cui non serve più.
     """
     context = mp.get_context("spawn")
     queue = context.Queue()
@@ -426,7 +426,7 @@ def measure(spec: dict, data: tuple, timeout: float) -> dict:
         if time.perf_counter() - start > timeout:
             break
         if not process.is_alive():
-            # Il processo e' terminato: l'esito puo' essere ancora in transito
+            # Il processo è terminato: l'esito può essere ancora in transito
             # sul canale, quindi la lettura viene ritentata una volta prima di
             # dichiarare la misura fallita.
             try:
@@ -477,11 +477,11 @@ def _report(label: str, n_rows: int, result: dict) -> None:
 
 
 def _project(previous: list[tuple[int, float]], n_next: int) -> float:
-    """Proietta il costo del punto successivo dai punti gia' misurati.
+    """Proietta il costo del punto successivo dai punti già misurati.
 
-    L'esponente e' stimato sugli ultimi due punti misurati; con un solo punto
-    disponibile si usa 3, che e' l'estremo superiore della crescita nota per
-    questo tipo di stimatore ed e' quindi la scelta prudente per una decisione
+    L'esponente è stimato sugli ultimi due punti misurati; con un solo punto
+    disponibile si usa 3, che è l'estremo superiore della crescita nota per
+    questo tipo di stimatore ed è quindi la scelta prudente per una decisione
     che riguarda se tentare o no una misura.
     """
     if not previous:
@@ -500,8 +500,8 @@ def run_ladder(subset, split_data, groups, ladder_rows, timeout, budget):
     """Costo di una configurazione centrale al crescere del numero di righe.
 
     Restituisce le righe dell'artefatto e, per ciascun kernel, il numero di
-    righe piu' alto su cui l'adattamento e' terminato entro il limite. E' il
-    dato con cui i blocchi successivi evitano di ritentare misure gia'
+    righe più alto su cui l'adattamento è terminato entro il limite. È il
+    dato con cui i blocchi successivi evitano di ritentare misure già
     dichiarate fuori portata.
     """
     X, y, X_valid, y_valid, train_idx = split_data
@@ -546,7 +546,7 @@ def run_ladder(subset, split_data, groups, ladder_rows, timeout, budget):
 
 
 def _out_of_reach(kernel: str, n_rows: int, reached: dict | None) -> bool:
-    """Vero se la scala ha gia' mostrato che quel kernel non arriva a quelle righe."""
+    """Vero se la scala ha già mostrato che quel kernel non arriva a quelle righe."""
     if reached is None:
         return False
     return reached.get(kernel, 0) < n_rows
@@ -563,7 +563,7 @@ def run_sensitivity(subset, split_data, groups, timeout, reached=None) -> list[d
     for kernel in KERNELS:
         if _out_of_reach(kernel, n_rows, reached):
             spec = {"kind": "svr", "kernel": kernel, **CENTER}
-            rows.append(_row(subset, "sensitivity", spec, n_rows, {"status": "non tentato, oltre il limite gia' sulla scala"}))
+            rows.append(_row(subset, "sensitivity", spec, n_rows, {"status": "non tentato, oltre il limite già sulla scala"}))
             print(f"    SVR {kernel:<40} {n_rows:>6,} righe   non tentato (oltre il limite sulla scala)")
             continue
         # La configurazione centrale appartiene a tutti gli assi e verrebbe
@@ -594,7 +594,7 @@ def run_cache(subset, split_data, groups, timeout, reached=None) -> list[dict]:
     rows = []
     if _out_of_reach("rbf", n_rows, reached):
         spec = {"kind": "svr", "kernel": "rbf", **CENTER}
-        rows.append(_row(subset, "cache", spec, n_rows, {"status": "non tentato, oltre il limite gia' sulla scala"}))
+        rows.append(_row(subset, "cache", spec, n_rows, {"status": "non tentato, oltre il limite già sulla scala"}))
         print(f"    SVR rbf{'':<37} {n_rows:>6,} righe   non tentato (oltre il limite sulla scala)")
         return rows
     for size in CACHE_SIZES:
@@ -608,7 +608,7 @@ def run_cache(subset, split_data, groups, timeout, reached=None) -> list[dict]:
 def run_confirm(subset, split_data, timeout, reached=None) -> list[dict]:
     """Angolo oneroso a dimensione piena, misurato e non estrapolato.
 
-    Include la stima in forma primale del kernel lineare, che e' l'alternativa
+    Include la stima in forma primale del kernel lineare, che è l'alternativa
     il cui costo cresce linearmente nelle righe: senza il suo numero accanto
     agli altri la decisione sul trattamento del modello resterebbe fra
     un'alternativa misurata e una supposta.
@@ -622,9 +622,9 @@ def run_confirm(subset, split_data, timeout, reached=None) -> list[dict]:
         spec = {"kind": "svr", "kernel": kernel, **CONFIRM}
         if _out_of_reach(kernel, n_rows, reached):
             # La configurazione centrale non termina a questa dimensione: quella
-            # onerosa, che ha penalizzazione dieci volte piu' alta e banda quattro
-            # volte piu' stretta, non puo' terminare prima.
-            rows.append(_row(subset, "confirm", spec, n_rows, {"status": "non tentato, oltre il limite gia' sulla scala"}))
+            # onerosa, che ha penalizzazione dieci volte più alta e banda quattro
+            # volte più stretta, non può terminare prima.
+            rows.append(_row(subset, "confirm", spec, n_rows, {"status": "non tentato, oltre il limite già sulla scala"}))
             print(f"    SVR {kernel:<40} {n_rows:>6,} righe   non tentato (oltre il limite sulla scala)")
             continue
         result = measure(spec, data, timeout)
@@ -731,7 +731,7 @@ def run_mlp_curve(subset, split_data, timeout) -> list[dict]:
 
 
 def merge_artifact(path, frame: pd.DataFrame, blocks: list[str]) -> pd.DataFrame:
-    """Unisce le righe appena misurate a quelle gia' presenti sul disco.
+    """Unisce le righe appena misurate a quelle già presenti sul disco.
 
     Sono sostituite le sole righe dei blocchi rieseguiti; le altre restano.
     Senza questa unione, lanciare un blocco aggiunto dopo cancellerebbe le
@@ -745,12 +745,12 @@ def merge_artifact(path, frame: pd.DataFrame, blocks: list[str]) -> pd.DataFrame
 
 
 def environment() -> pd.DataFrame:
-    """Quantita' da cui si ricava la durata di un esperimento dalle misure.
+    """Quantità da cui si ricava la durata di un esperimento dalle misure.
 
     Il tempo per adattamento moltiplicato per il numero di configurazioni e per
     il numero di fold, diviso per il numero di processi effettivamente
-    utilizzabili, da' la durata di una ricerca. Il numero di processori e la
-    memoria vanno percio' registrati accanto ai tempi: gli stessi tempi su una
+    utilizzabili, dà la durata di una ricerca. Il numero di processori e la
+    memoria vanno perciò registrati accanto ai tempi: gli stessi tempi su una
     macchina diversa portano a una decisione diversa.
     """
     import sklearn
@@ -805,7 +805,7 @@ def run_subset(subset, cap, blocks, ladder_rows, timeout, confirm_timeout, budge
         )
         kernel_rows += ladder_rows_out
     if "sensitivity" in blocks:
-        print(f"\n  sensibilita' agli iperparametri, {SENSITIVITY_ROWS:,} righe richieste")
+        print(f"\n  sensibilità agli iperparametri, {SENSITIVITY_ROWS:,} righe richieste")
         kernel_rows += run_sensitivity(subset, split_data, groups, timeout, reached)
     if "cache" in blocks:
         print(f"\n  dimensione della cache del kernel, {CACHE_ROWS:,} righe richieste")

@@ -5,61 +5,61 @@ Ruolo nel progetto
     valutazione. Trasforma le traiettorie caricate da `src.data` e arricchite da
     `src.target` nelle strutture su cui opera il protocollo: una matrice di
     variabili esplicative, un vettore target, un vettore di identificativi di
-    unita' per il partizionamento.
+    unità per il partizionamento.
 
 Cosa riceve
     Il nome di un sottoinsieme ("FD001", "FD003") e la soglia di censura.
 
 Cosa produce
     Una struttura `Design` che tiene insieme la parte di addestramento e la
-    parte di verifica ufficiale dello stesso sottoinsieme, gia' allineate sulle
+    parte di verifica ufficiale dello stesso sottoinsieme, già allineate sulle
     stesse colonne e nello stesso ordine.
 
 Variabili esplicative
     Numero di ciclo, impostazioni operative e letture dei sensori non costanti.
 
-    Il numero di ciclo e' incluso. Non e' una fuga di informazione: il numero di
-    cicli percorsi e' noto al momento della predizione anche su una traiettoria
-    troncata. Va pero' tenuto presente che su traiettorie che arrivano tutte al
-    guasto la vita utile residua e' per costruzione la differenza fra durata e
-    ciclo corrente, quindi una parte della capacita' predittiva di qualunque
+    Il numero di ciclo è incluso. Non è una fuga di informazione: il numero di
+    cicli percorsi è noto al momento della predizione anche su una traiettoria
+    troncata. Va però tenuto presente che su traiettorie che arrivano tutte al
+    guasto la vita utile residua è per costruzione la differenza fra durata e
+    ciclo corrente, quindi una parte della capacità predittiva di qualunque
     modello proviene da un conteggio e non dalla lettura del degrado. Questa
-    relazione e' esatta sulle traiettorie complete e non lo e' su quelle
-    troncate, dove il punto di interruzione e' casuale: il contributo del
+    relazione è esatta sulle traiettorie complete e non lo è su quelle
+    troncate, dove il punto di interruzione è casuale: il contributo del
     numero di ciclo si trasferisce quindi solo in parte dall'insieme di
     addestramento a quello di verifica. Per rendere misurabile questa parte il
     confronto include una baseline che usa il solo numero di ciclo, rispetto
     alla quale si legge il guadagno dei modelli che usano i sensori.
 
     Le colonne costanti vengono rimosse: portano zero informazione e la loro
-    standardizzazione e' una divisione per una quantita' nulla. Il criterio e'
+    standardizzazione è una divisione per una quantità nulla. Il criterio è
     il numero di valori distinti, esatto per costruzione, e non la deviazione
     standard, che su una colonna di valori identici restituisce un residuo di
     arrotondamento non nullo. Le costanti sono determinate sulle sole
-    traiettorie di addestramento del sottoinsieme, e sono una proprieta'
+    traiettorie di addestramento del sottoinsieme, e sono una proprietà
     strutturale del sensore in quel regime operativo: non dipendono dal target,
     quindi determinarle sull'intera parte di addestramento non introduce
     informazione proveniente dalle partizioni di verifica.
 
-    L'elenco atteso e' verificato contro un valore cablato: uno scostamento
-    indica dati diversi da quelli su cui il progetto e' costruito, ed e' un
+    L'elenco atteso è verificato contro un valore cablato: uno scostamento
+    indica dati diversi da quelli su cui il progetto è costruito, ed è un
     errore, non una variazione da assorbire.
 
 Parte di verifica ufficiale
-    Le traiettorie di verifica sono troncate e ciascuna unita' ha una sola
+    Le traiettorie di verifica sono troncate e ciascuna unità ha una sola
     etichetta di vita utile residua, riferita all'ultimo ciclo osservato. Da
-    quella si ricava il target a ogni ciclo, quindi la parte di verifica e'
+    quella si ricava il target a ogni ciclo, quindi la parte di verifica è
     utilizzabile per intero e non soltanto sull'ultimo ciclo. La maschera
-    `last_cycle` individua le righe finali di ciascuna unita' e permette la
-    lettura ristretta con cui il dataset e' riportato in letteratura.
+    `last_cycle` individua le righe finali di ciascuna unità e permette la
+    lettura ristretta con cui il dataset è riportato in letteratura.
 
-    Il troncamento e' casuale, quindi la composizione delle traiettorie di
-    verifica e' spostata verso la fase iniziale di vita rispetto a quelle di
+    Il troncamento è casuale, quindi la composizione delle traiettorie di
+    verifica è spostata verso la fase iniziale di vita rispetto a quelle di
     addestramento, che arrivano tutte al guasto. La quota di righe al valore di
-    soglia e' percio' piu' alta e la variabilita' del target piu' bassa: i
+    soglia è perciò più alta e la variabilità del target più bassa: i
     valori assoluti delle metriche calcolate sulle due parti non sono
-    confrontabili fra loro. `describe` riporta entrambe le quantita' proprio
-    perche' la differenza sia leggibile e non venga scambiata per un effetto dei
+    confrontabili fra loro. `describe` riporta entrambe le quantità proprio
+    perché la differenza sia leggibile e non venga scambiata per un effetto dei
     modelli.
 """
 
@@ -90,7 +90,7 @@ from src.target import (
 SUBSETS_IN_SCOPE = ("FD001", "FD003")
 
 # Colonne costanti attese, verificate in fase di esplorazione. Sono pin di
-# integrita': il codice le ricalcola e confronta.
+# integrità: il codice le ricalcola e confronta.
 EXPECTED_CONSTANTS = {
     "FD001": [
         "setting_3",
@@ -120,7 +120,7 @@ class Design:
     parte di verifica ufficiale.
 
     X_train, y_train, groups_train
-        Traiettorie complete fino al guasto. `groups_train` e' l'identificativo
+        Traiettorie complete fino al guasto. `groups_train` è l'identificativo
         del motore di ciascuna riga e viene usato per il partizionamento.
     X_test, y_test, groups_test
         Traiettorie troncate del file di verifica ufficiale, con target
@@ -131,7 +131,7 @@ class Design:
         vita utile residua effettiva. Non entra in nessuna selezione.
     last_cycle
         Maschera booleana sulle righe di verifica: vera sull'ultimo ciclo
-        osservato di ciascuna unita'.
+        osservato di ciascuna unità.
     """
 
     subset: str
@@ -159,7 +159,7 @@ class Design:
 def constant_columns(frame: pd.DataFrame, columns=None) -> list[str]:
     """Colonne con un solo valore distinto.
 
-    Il criterio e' il conteggio dei valori distinti e non la deviazione
+    Il criterio è il conteggio dei valori distinti e non la deviazione
     standard: su una colonna di valori identici la deviazione standard calcolata
     numericamente vale circa 1e-13 e il confronto con zero fallisce.
     """
@@ -177,8 +177,8 @@ def build_design(
     """Costruisce la matrice di progetto di un sottoinsieme.
 
     cap
-        Soglia di censura del target. `None` disattiva la censura ed e' il modo
-        in cui si esegue il controllo di sensibilita' sul target lineare.
+        Soglia di censura del target. `None` disattiva la censura ed è il modo
+        in cui si esegue il controllo di sensibilità sul target lineare.
     check_constants
         Se vero, confronta le colonne costanti trovate con quelle attese e
         solleva un errore in caso di scostamento.
@@ -188,7 +188,7 @@ def build_design(
     train = add_censored_rul(data.train, cap=cap)
 
     # Il target di verifica viene costruito prima senza censura e censurato
-    # dopo, cosi' da conservare entrambe le versioni: la censurata e' quella su
+    # dopo, così da conservare entrambe le versioni: la censurata è quella su
     # cui il progetto valuta, la non censurata serve alla sola lettura di
     # raffronto con la letteratura.
     test = add_rul_from_labels(data.test, data.rul)
@@ -206,15 +206,15 @@ def build_design(
     features = [c for c in CANDIDATE_COLS if c not in dropped]
 
     # La maschera dell'ultimo ciclo va calcolata prima di ridurre alle sole
-    # colonne esplicative, perche' usa l'identificativo di unita' e il ciclo.
+    # colonne esplicative, perché usa l'identificativo di unità e il ciclo.
     last_cycle_flag = (
         test[CYCLE_COL] == test.groupby(UNIT_COL)[CYCLE_COL].transform("max")
     ).to_numpy()
 
-    # Controllo di integrita' sul target di verifica: sull'ultimo ciclo di ogni
-    # unita' deve coincidere con l'etichetta, censurata alla stessa soglia. Un
-    # disallineamento posizionale fra etichette e unita' produrrebbe un target
-    # quasi costante e facile da predire, cioe' un risultato migliore del vero
+    # Controllo di integrità sul target di verifica: sull'ultimo ciclo di ogni
+    # unità deve coincidere con l'etichetta, censurata alla stessa soglia. Un
+    # disallineamento posizionale fra etichette e unità produrrebbe un target
+    # quasi costante e facile da predire, cioè un risultato migliore del vero
     # senza che nulla segnali l'errore.
     expected_at_end = (
         censor(data.rul, cap).astype("int32").sort_index().to_numpy()

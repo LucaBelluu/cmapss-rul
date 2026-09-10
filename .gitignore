@@ -16,13 +16,14 @@ venv/
 .ipynb_checkpoints/
 
 # Dati grezzi e derivati.
-# Non versionati perché pesanti e rigenerabili con lo script di
-# acquisizione. La cartella resta nella repository tramite .gitkeep.
+# Non versionati perché pesanti e perché la loro ridistribuzione non
+# compete a questa repository. L'acquisizione è manuale ed è documentata
+# nel README. La cartella resta nella repository tramite .gitkeep.
 data/*
 !data/.gitkeep
 
 # Artefatti generati dagli esperimenti.
-# Non versionati perché rigenerabili eseguendo gli script.
+# Non versionati perché rigenerabili eseguendo gli script di scripts/.
 # Le tabelle e le figure finali stanno in results/ e sono versionate.
 experiments/*
 !experiments/.gitkeep

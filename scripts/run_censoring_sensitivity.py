@@ -1,8 +1,8 @@
-"""Controllo di sensibilita' della graduatoria alla soglia di censura del target.
+"""Controllo di sensibilità della graduatoria alla soglia di censura del target.
 
 Ruolo nel progetto
-    La censura del target a 125 cicli e' un'ipotesi di modellazione fissata a
-    priori, non una quantita' misurata, e i valori assoluti di tutte le metriche
+    La censura del target a 125 cicli è un'ipotesi di modellazione fissata a
+    priori, non una quantità misurata, e i valori assoluti di tutte le metriche
     dipendono da essa. Questo script misura se l'ordine fra le famiglie di
     modelli dipenda dalla stessa ipotesi, rivalutando un modello per famiglia
     sulle stesse partizioni con la censura disattivata.
@@ -27,43 +27,43 @@ Perimetro
     generalizzato per i modelli non lineari additivi, la foresta casuale per la
     famiglia ad albero, il percettrone multistrato per i metodi a margine e le
     reti. Sono, in ciascuna famiglia, la riga meglio piazzata su FD001, e sono
-    gli stessi sui due sottoinsiemi perche' le due repliche restino confrontabili.
+    gli stessi sui due sottoinsiemi perché le due repliche restino confrontabili.
 
     Le due baseline entrano nel controllo insieme ai modelli. Sotto censura
     disattivata la predizione costante restituisce la deviazione standard del
-    target non censurato, che e' la scala su cui vanno letti gli errori di quel
-    regime: senza quel riferimento l'incomparabilita' dei valori assoluti fra i
+    target non censurato, che è la scala su cui vanno letti gli errori di quel
+    regime: senza quel riferimento l'incomparabilità dei valori assoluti fra i
     due regimi resterebbe un'affermazione invece che una misura.
 
 La configurazione resta quella selezionata sotto censura
     La ricerca su griglia non viene rifatta nel regime senza censura. Rifarla
     equivarrebbe a condurre un secondo confronto completo su una diversa
     definizione del target, che il progetto ha scartato per costo quando la
-    definizione e' stata fissata.
+    definizione è stata fissata.
 
-    La conseguenza va dichiarata e la lettura che ne segue e' a senso unico. Ogni
-    configurazione e' stata scelta per un target di scala diversa da quello su
+    La conseguenza va dichiarata e la lettura che ne segue è a senso unico. Ogni
+    configurazione è stata scelta per un target di scala diversa da quello su
     cui viene qui valutata, quindi una famiglia il cui ottimo si sposta molto
     risulta svantaggiata. Se l'ordine fra famiglie regge nonostante questo, il
-    risultato e' solido; se si inverte, non se ne puo' concludere che la famiglia
-    sia peggiore sotto il target non censurato, perche' l'inversione puo' essere
+    risultato è solido; se si inverte, non se ne può concludere che la famiglia
+    sia peggiore sotto il target non censurato, perché l'inversione può essere
     prodotta dalla configurazione congelata.
 
 Come si leggono i due regimi
     Non sull'errore. La censura tronca il target a 125 cicli e la sua rimozione
     ne aumenta dispersione ed escursione, quindi l'errore quadratico medio
     cresce per costruzione in ogni riga e i due regimi non sono confrontabili in
-    valore assoluto. Cio' che si confronta e' l'ordine dentro ciascun regime, e
-    il coefficiente di determinazione, che e' adimensionale e rapporta l'errore
-    alla variabilita' disponibile in quel regime.
+    valore assoluto. Ciò che si confronta è l'ordine dentro ciascun regime, e
+    il coefficiente di determinazione, che è adimensionale e rapporta l'errore
+    alla variabilità disponibile in quel regime.
 
 Controllo incorporato
-    Il regime con censura ripete una misura gia' in graduatoria e deve
-    riprodurla. E' lo stesso controllo di fedelta' della ricostruzione usato dal
+    Il regime con censura ripete una misura già in graduatoria e deve
+    riprodurla. È lo stesso controllo di fedeltà della ricostruzione usato dal
     diagnostico sul seme dello stimatore, e vale qui per la ragione ulteriore che
     le due esecuzioni devono differire per la sola definizione del target: se il
     regime censurato non riproduce la graduatoria, la differenza osservata
-    nell'altro regime non e' attribuibile alla censura.
+    nell'altro regime non è attribuibile alla censura.
 
 Come si lancia
     python -m scripts.run_censoring_sensitivity --subsets FD001 --models ridge
@@ -109,7 +109,7 @@ REPRODUCTION_TOLERANCE = 1e-6
 def build_regimes(subset: str) -> dict[str, object]:
     """Le due matrici di progetto, che devono differire per il solo target.
 
-    L'uguaglianza delle variabili esplicative e degli identificativi di unita' e'
+    L'uguaglianza delle variabili esplicative e degli identificativi di unità è
     verificata e non supposta: se le due matrici differissero anche solo
     nell'ordine delle righe, le partizioni non sarebbero le stesse e il confronto
     fra regimi misurerebbe due cose insieme.
@@ -120,7 +120,7 @@ def build_regimes(subset: str) -> dict[str, object]:
         if not design.X_train.equals(reference.X_train):
             raise AssertionError(f"{subset}: la matrice del regime {name} non coincide")
         if not np.array_equal(design.groups_train, reference.groups_train):
-            raise AssertionError(f"{subset}: le unita' del regime {name} non coincidono")
+            raise AssertionError(f"{subset}: le unità del regime {name} non coincidono")
     return designs
 
 
@@ -148,9 +148,9 @@ def run_subset(subset: str, models: list[str]) -> dict:
             continue
         row = row.iloc[0]
 
-        # La ricostruzione parte sempre dalla matrice censurata, che e' quella
+        # La ricostruzione parte sempre dalla matrice censurata, che è quella
         # che ha prodotto la configurazione registrata. Lo stimatore non dipende
-        # dal target, quindi e' lo stesso oggetto nei due regimi.
+        # dal target, quindi è lo stesso oggetto nei due regimi.
         estimator = rebuild(key, row["config"], reference)
         print(f"\n[{key}] {row['config']}")
 
@@ -202,9 +202,9 @@ def run_subset(subset: str, models: list[str]) -> dict:
 
     table = pd.DataFrame.from_records(records)
 
-    # La posizione e' calcolata dentro ciascun regime e mai fra regimi: la scala
+    # La posizione è calcolata dentro ciascun regime e mai fra regimi: la scala
     # del target cambia, quindi gli errori dei due regimi non sono confrontabili
-    # e l'unica quantita' trasferibile e' l'ordine.
+    # e l'unica quantità trasferibile è l'ordine.
     table["rango_nel_regime"] = table.groupby("regime")["rmse_mean"].rank(method="min").astype(int)
     table = table.sort_values(["regime", "rmse_mean"]).reset_index(drop=True)
 

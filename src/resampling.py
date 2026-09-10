@@ -1,12 +1,12 @@
-"""Metodi di ricampionamento per la stima dell'errore, applicati alle unita' motore.
+"""Metodi di ricampionamento per la stima dell'errore, applicati alle unità motore.
 
 Ruolo nel progetto
     Riproduce i quattro metodi di stima dell'errore del laboratorio 6
-    (partizione unica addestramento e verifica, esclusione di una unita' per
+    (partizione unica addestramento e verifica, esclusione di una unità per
     volta, K-Fold, bootstrap) su un unico modello, la regressione lineare
     multipla. Il confronto non riguarda i modelli ma le procedure con cui il
     loro errore viene stimato: mostra quanto la stima dipenda dalla procedura
-    scelta, ed e' la giustificazione empirica dello schema adottato dal
+    scelta, ed è la giustificazione empirica dello schema adottato dal
     protocollo del progetto.
 
 Cosa riceve
@@ -19,38 +19,38 @@ Cosa produce
     Per ciascun metodo, le metriche di ogni ripetizione e un riepilogo su media
     e dispersione. Per il bootstrap anche la distribuzione dei coefficienti.
 
-Trasposizione alle unita'
-    Nel laboratorio i quattro metodi ricampionano righe, perche' le
-    osservazioni sono indipendenti. Qui l'unita' di ricampionamento e' il
+Trasposizione alle unità
+    Nel laboratorio i quattro metodi ricampionano righe, perché le
+    osservazioni sono indipendenti. Qui l'unità di ricampionamento è il
     motore, per la stessa ragione per cui il partizionamento del protocollo
     avviene per motore: le righe di una stessa traiettoria sono cicli
     consecutivi e non sono indipendenti fra loro. L'esclusione di una
-    osservazione per volta diventa percio' esclusione di un motore per volta,
-    che e' la trasposizione della validazione incrociata esaustiva a dati
+    osservazione per volta diventa perciò esclusione di un motore per volta,
+    che è la trasposizione della validazione incrociata esaustiva a dati
     raggruppati.
 
-    La trasposizione ha una conseguenza sulla numerosita': i metodi operano su
-    100 unita' e non su 20.631 righe, e le stime che ne derivano hanno la
-    variabilita' che compete a un campione di cento elementi.
+    La trasposizione ha una conseguenza sulla numerosità: i metodi operano su
+    100 unità e non su 20.631 righe, e le stime che ne derivano hanno la
+    variabilità che compete a un campione di cento elementi.
 
 Il bootstrap
-    Nel laboratorio il bootstrap e' una funzione di ricampionamento scritta da
+    Nel laboratorio il bootstrap è una funzione di ricampionamento scritta da
     zero, che riceve un insieme di dati e restituisce un numero richiesto di
     campioni estratti con reinserimento. La funzione `bootstrap` di questo
     modulo conserva quella firma e viene applicata all'elenco degli
     identificativi dei motori.
 
-    Serve a due scopi distinti. Il primo e' la variabilita' dei coefficienti
+    Serve a due scopi distinti. Il primo è la variabilità dei coefficienti
     della regressione: rieseguendo la stima su ogni campione si ottiene la
     distribuzione di ciascun coefficiente, da cui si legge quali variabili
     hanno un contributo di segno stabile e quali cambiano segno al variare del
-    campione. Il secondo e' la stima dell'errore fuori campione: i motori non
+    campione. Il secondo è la stima dell'errore fuori campione: i motori non
     estratti in un campione non hanno partecipato all'addestramento e formano
     una parte di verifica, il che rende il bootstrap confrontabile con gli
     altri tre metodi nella stessa tabella.
 
-    Un campione bootstrap estratto con reinserimento da n unita' ne lascia
-    fuori in media una frazione pari a circa il 37 per cento, che e' la
+    Un campione bootstrap estratto con reinserimento da n unità ne lascia
+    fuori in media una frazione pari a circa il 37 per cento, che è la
     dimensione attesa della parte di verifica di ciascuna ripetizione.
 """
 
@@ -68,7 +68,7 @@ from src.protocol import FoldSplit, evaluate, make_splits, regression_metrics, s
 N_VALIDATION_REPEATS = 20
 VALIDATION_TEST_SHARE = 0.3
 
-# Numero di campioni bootstrap. Il valore e' un compromesso fra stabilita'
+# Numero di campioni bootstrap. Il valore è un compromesso fra stabilità
 # della distribuzione dei coefficienti e costo: duecento riaddestramenti di una
 # regressione lineare su ventimila righe restano nell'ordine dei secondi.
 N_BOOTSTRAP = 200
@@ -83,11 +83,11 @@ def validation_set_approach(
     n_repeats: int = N_VALIDATION_REPEATS,
     test_share: float = VALIDATION_TEST_SHARE,
 ) -> pd.DataFrame:
-    """Partizione unica in addestramento e verifica, ripetuta su piu' semi.
+    """Partizione unica in addestramento e verifica, ripetuta su più semi.
 
     La partizione separa i motori e non le righe. La ripetizione su semi
     diversi non serve a ottenere una stima migliore ma a rendere misurabile
-    quanto la stima dipenda dalla partizione scelta, che e' il limite del
+    quanto la stima dipenda dalla partizione scelta, che è il limite del
     metodo.
     """
     groups = np.asarray(groups)
@@ -103,10 +103,10 @@ def validation_set_approach(
 
 
 def leave_one_unit_out(estimator, X, y, groups) -> pd.DataFrame:
-    """Esclusione di un motore per volta: tante stime quante sono le unita'.
+    """Esclusione di un motore per volta: tante stime quante sono le unità.
 
-    E' la trasposizione ai dati raggruppati della validazione incrociata
-    esaustiva del laboratorio. Ogni parte di verifica e' una traiettoria
+    È la trasposizione ai dati raggruppati della validazione incrociata
+    esaustiva del laboratorio. Ogni parte di verifica è una traiettoria
     intera, quindi le metriche per fold sono calcolate su alcune centinaia di
     righe e non su una sola osservazione.
     """
@@ -136,8 +136,8 @@ def bootstrap(data, n_samples: int, random_state: int = 0) -> list[list]:
 
     Riproduce la funzione richiesta dal laboratorio: riceve un insieme di dati
     in forma di elenco, il numero di campioni desiderato e un seme, e
-    restituisce l'elenco dei campioni. Ogni campione ha la stessa numerosita'
-    dell'insieme di partenza ed e' estratto con reinserimento, quindi puo'
+    restituisce l'elenco dei campioni. Ogni campione ha la stessa numerosità
+    dell'insieme di partenza ed è estratto con reinserimento, quindi può
     contenere ripetizioni e lasciare fuori parte degli elementi.
     """
     rng = np.random.default_rng(random_state)
@@ -206,11 +206,11 @@ def bootstrap_estimates(
 def coefficient_intervals(coefficients: pd.DataFrame, level: float = 0.95) -> pd.DataFrame:
     """Riepilogo della distribuzione bootstrap di ciascun coefficiente.
 
-    L'intervallo e' costruito sui quantili empirici della distribuzione. La
-    colonna `stable_sign` indica se l'intervallo esclude lo zero, cioe' se il
+    L'intervallo è costruito sui quantili empirici della distribuzione. La
+    colonna `stable_sign` indica se l'intervallo esclude lo zero, cioè se il
     contributo della variabile mantiene lo stesso segno al variare del
-    campione di motori. Non e' un test di ipotesi: e' una lettura della
-    variabilita' della stima, e come tale entra nel commento del modello.
+    campione di motori. Non è un test di ipotesi: è una lettura della
+    variabilità della stima, e come tale entra nel commento del modello.
     """
     lower_q = (1.0 - level) / 2.0
     upper_q = 1.0 - lower_q
@@ -233,12 +233,12 @@ def summarize_methods(frames: list[pd.DataFrame]) -> pd.DataFrame:
     """Riepiloga i metodi in una tabella unica, un metodo per riga.
 
     La dispersione riportata da ciascun metodo non ha lo stesso significato:
-    per la partizione unica descrive la variabilita' fra partizioni diverse,
-    per il K-Fold e per l'esclusione di una unita' per volta la variabilita'
+    per la partizione unica descrive la variabilità fra partizioni diverse,
+    per il K-Fold e per l'esclusione di una unità per volta la variabilità
     fra parti di verifica di una stessa procedura, per il bootstrap la
-    variabilita' fra campioni. I valori sono percio' accostabili ma non
+    variabilità fra campioni. I valori sono perciò accostabili ma non
     intercambiabili, e la tabella li tiene distinti nella colonna `n_fit`, che
-    dice su quante stime ciascuna riga e' costruita.
+    dice su quante stime ciascuna riga è costruita.
     """
     rows = []
     for frame in frames:

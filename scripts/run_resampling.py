@@ -2,13 +2,13 @@
 
 Ruolo nel progetto
     Applica a un solo modello, la regressione lineare multipla, le quattro
-    procedure di stima dell'errore viste nel corso, ricampionando le unita'
-    motore anziche' le righe. Non e' un esperimento sul modello: e' un
+    procedure di stima dell'errore viste nel corso, ricampionando le unità
+    motore anziché le righe. Non è un esperimento sul modello: è un
     esperimento sulle procedure, e serve a mostrare quanto la stima
     dell'errore dipenda da come viene costruita.
 
-    E' anche la giustificazione empirica dello schema adottato dal protocollo
-    del progetto: il numero di fold e la ripetizione su piu' semi sono scelte
+    È anche la giustificazione empirica dello schema adottato dal protocollo
+    del progetto: il numero di fold e la ripetizione su più semi sono scelte
     che qui vengono misurate invece di essere soltanto argomentate.
 
 Cosa riceve

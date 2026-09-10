@@ -5,7 +5,7 @@ Ruolo nel progetto
     Precede l'esperimento del terzo blocco del confronto e non ne fa parte. Le
     griglie degli iperparametri sono fissate su una misura del costo e non su
     una stima, come per il blocco precedente, e il numero di alberi degli
-    insiemi per aggregazione e' fissato a priori con una curva che ne mostra la
+    insiemi per aggregazione è fissato a priori con una curva che ne mostra la
     saturazione. Nessun risultato prodotto qui entra in graduatoria.
 
 Cosa riceve
@@ -21,38 +21,38 @@ Cosa produce
     - `{SUBSET}_ensemble_saturation.csv`, errore e tempo cumulato al crescere del
       numero di alberi, per il bagging e per due configurazioni della foresta.
 
-Perche' una sola partizione
-    Il costo di un adattamento non richiede una media su piu' fold: dipende
-    dalla forma della matrice, che e' la stessa su tutte le partizioni. La
-    misura usa quindi la prima partizione del seme di ricerca, cioe' 80 motori
-    in addestramento e 20 in verifica, che e' esattamente la forma su cui il
-    blocco lavorera'.
+Perché una sola partizione
+    Il costo di un adattamento non richiede una media su più fold: dipende
+    dalla forma della matrice, che è la stessa su tutte le partizioni. La
+    misura usa quindi la prima partizione del seme di ricerca, cioè 80 motori
+    in addestramento e 20 in verifica, che è esattamente la forma su cui il
+    blocco lavorerà.
 
-Le due quantita' che contano
+Le due quantità che contano
     Il tempo per adattamento moltiplicato per il numero di configurazioni e per
-    il numero di fold da' la durata della ricerca di ciascun modello. Il numero
-    di nodi dell'insieme e' un indice diretto della memoria occupata: un albero
+    il numero di fold dà la durata della ricerca di ciascun modello. Il numero
+    di nodi dell'insieme è un indice diretto della memoria occupata: un albero
     non potato su 16.500 righe ha circa una foglia per riga, e la ricerca su
-    griglia ne tiene in vita tante copie quanti sono i processi paralleli. E' il
+    griglia ne tiene in vita tante copie quanti sono i processi paralleli. È il
     vincolo operativo del blocco.
 
 Errore riportato nella sonda dei costi
-    L'errore sulla partizione e' registrato come controllo di plausibilita'
+    L'errore sulla partizione è registrato come controllo di plausibilità
     della catena, non come criterio con cui fissare gli estremi delle griglie:
-    scegliere un intervallo perche' contiene il valore migliore osservato in
+    scegliere un intervallo perché contiene il valore migliore osservato in
     questa misura sarebbe una selezione fatta prima e fuori dal protocollo.
 
 Curva di saturazione
     L'errore di un insieme per aggregazione decresce in modo monotono nel numero
-    di alberi e satura: il numero di alberi non e' un iperparametro che governa
+    di alberi e satura: il numero di alberi non è un iperparametro che governa
     un compromesso, ma un parametro di precisione della media. Metterlo in
     griglia farebbe selezionare sempre il valore massimo e chiederebbe alla
-    regola sui bordi un'estensione senza fine. Il valore e' percio' fissato a
+    regola sui bordi un'estensione senza fine. Il valore è perciò fissato a
     300 e la curva serve a verificare che a quel punto non resti guadagno
     apprezzabile; se la curva fosse ancora in discesa, il valore sale prima che
     il blocco venga eseguito.
 
-    La sequenza e' costruita con l'aggiunta incrementale di alberi a uno stesso
+    La sequenza è costruita con l'aggiunta incrementale di alberi a uno stesso
     insieme, quindi l'intera curva costa quanto il solo adattamento con il
     numero massimo di alberi.
 
@@ -90,7 +90,7 @@ from src.target import RUL_CAP
 
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "tree_models"
 
-# Seme degli stimatori che ne richiedono uno. E' distinto dai semi del
+# Seme degli stimatori che ne richiedono uno. È distinto dai semi del
 # protocollo, che governano il partizionamento: qui riguarda il campionamento
 # bootstrap e la scelta delle variabili candidate, non quali motori finiscono
 # da che parte.
@@ -103,7 +103,7 @@ SATURATION_CHECKPOINTS = (25, 50, 100, 200, 300, 400, 500)
 def _n_nodes(estimator) -> float:
     """Nodi complessivi di un albero o di un insieme di alberi di scikit-learn.
 
-    E' la quantita' da cui si legge la memoria occupata. Non e' disponibile
+    È la quantità da cui si legge la memoria occupata. Non è disponibile
     sull'implementazione esterna di gradient boosting, che non espone gli alberi
     come oggetti di scikit-learn: per quel modello la colonna resta vuota.
     """
@@ -122,9 +122,9 @@ def probe_specs(n_jobs_model: int) -> list[tuple[str, str, object]]:
     punto intermedio per ciascun modello, da cui interpolare il resto.
 
     L'implementazione esterna di gradient boosting riceve un solo processo,
-    perche' dentro la ricerca su griglia il parallelismo e' gia' speso sulle
+    perché dentro la ricerca su griglia il parallelismo è già speso sulle
     configurazioni: misurarla con tutti i processori sovrastimerebbe la sua
-    velocita' relativa nelle condizioni in cui verra' effettivamente usata.
+    velocità relativa nelle condizioni in cui verrà effettivamente usata.
     """
     return [
         (
@@ -139,7 +139,7 @@ def probe_specs(n_jobs_model: int) -> list[tuple[str, str, object]]:
         ),
         (
             "adaboost_max",
-            "AdaBoost, 400 stadi, profondita' 4",
+            "AdaBoost, 400 stadi, profondità 4",
             AdaBoostRegressor(
                 estimator=DecisionTreeRegressor(max_depth=4, random_state=MODEL_SEED),
                 n_estimators=400,
@@ -149,7 +149,7 @@ def probe_specs(n_jobs_model: int) -> list[tuple[str, str, object]]:
         ),
         (
             "adaboost_min",
-            "AdaBoost, 100 stadi, profondita' 2",
+            "AdaBoost, 100 stadi, profondità 2",
             AdaBoostRegressor(
                 estimator=DecisionTreeRegressor(max_depth=2, random_state=MODEL_SEED),
                 n_estimators=100,
@@ -159,7 +159,7 @@ def probe_specs(n_jobs_model: int) -> list[tuple[str, str, object]]:
         ),
         (
             "gradient_boosting_max",
-            "Gradient boosting, 600 stadi, profondita' 5",
+            "Gradient boosting, 600 stadi, profondità 5",
             GradientBoostingRegressor(
                 n_estimators=600,
                 learning_rate=0.05,
@@ -169,7 +169,7 @@ def probe_specs(n_jobs_model: int) -> list[tuple[str, str, object]]:
         ),
         (
             "gradient_boosting_min",
-            "Gradient boosting, 100 stadi, profondita' 2",
+            "Gradient boosting, 100 stadi, profondità 2",
             GradientBoostingRegressor(
                 n_estimators=100,
                 learning_rate=0.05,
@@ -179,7 +179,7 @@ def probe_specs(n_jobs_model: int) -> list[tuple[str, str, object]]:
         ),
         (
             "xgboost_max",
-            "XGBoost, 600 stadi, profondita' 5",
+            "XGBoost, 600 stadi, profondità 5",
             XGBRegressor(
                 n_estimators=600,
                 learning_rate=0.05,
@@ -191,7 +191,7 @@ def probe_specs(n_jobs_model: int) -> list[tuple[str, str, object]]:
         ),
         (
             "xgboost_min",
-            "XGBoost, 100 stadi, profondita' 2",
+            "XGBoost, 100 stadi, profondità 2",
             XGBRegressor(
                 n_estimators=100,
                 learning_rate=0.05,
@@ -208,8 +208,8 @@ def saturation_specs(n_jobs: int) -> list[tuple[str, str, object]]:
     """Insiemi per aggregazione su cui viene misurata la saturazione.
 
     Il bagging e la foresta a frazione unitaria sono lo stesso modello sotto due
-    classi diverse: la coincidenza dei loro errori e' un controllo di
-    correttezza, e la loro distanza dalla foresta decorrelata e' l'effetto che
+    classi diverse: la coincidenza dei loro errori è un controllo di
+    correttezza, e la loro distanza dalla foresta decorrelata è l'effetto che
     la famiglia serve a mostrare.
     """
     return [

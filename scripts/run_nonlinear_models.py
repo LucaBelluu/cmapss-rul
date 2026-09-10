@@ -1,4 +1,4 @@
-"""Esperimento del secondo blocco del confronto: il superamento della linearita'.
+"""Esperimento del secondo blocco del confronto: il superamento della linearità.
 
 Ruolo nel progetto
     Compone l'esperimento del blocco lanciando, sotto il protocollo unico del
@@ -33,10 +33,10 @@ Cosa produce
 Colonna `n_nonzero` nella tabella di confronto
     Conta le righe della tabella dei parametri leggibili, che per i tre modelli
     a espansione di base sono i termini della base e per il modello additivo
-    sono le variabili. Fra i due gruppi la colonna non e' quindi confrontabile:
+    sono le variabili. Fra i due gruppi la colonna non è quindi confrontabile:
     un polinomio di grado 3 su 18 variabili ha 1.329 termini, un modello
-    additivo ne ha 18 comunque penalizzati. La quantita' confrontabile per il
-    modello additivo sono i gradi di liberta' effettivi, riportati in
+    additivo ne ha 18 comunque penalizzati. La quantità confrontabile per il
+    modello additivo sono i gradi di libertà effettivi, riportati in
     `{SUBSET}_terms.csv`.
 
 Come si lancia
@@ -44,7 +44,7 @@ Come si lancia
     python -m scripts.run_nonlinear_models --subsets FD001 --quick
     python -m scripts.run_nonlinear_models --models gam
 
-    La modalita' `--quick` esegue la catena su griglie ridotte e serve a
+    La modalità `--quick` esegue la catena su griglie ridotte e serve a
     convalidarla prima di lanciare la versione completa.
 
     Il numero di processi paralleli va ridotto se la regola sui bordi imponesse
@@ -76,17 +76,17 @@ from src.target import RUL_CAP
 
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "nonlinear_models"
 
-# Modello di cui vengono esportate le funzioni parziali. E' la lettura con cui
+# Modello di cui vengono esportate le funzioni parziali. È la lettura con cui
 # il laboratorio commenta il modello additivo, e non ha equivalente negli altri
-# modelli del blocco, i cui termini sono gia' in `{SUBSET}_terms.csv`.
+# modelli del blocco, i cui termini sono già in `{SUBSET}_terms.csv`.
 PARTIAL_DEPENDENCE_MODEL = "gam"
 
 
 def reduced_grid(grid: dict) -> dict:
-    """Griglia ridotta agli estremi e al centro, per la modalita' di convalida.
+    """Griglia ridotta agli estremi e al centro, per la modalità di convalida.
 
     Esercita la catena su ogni parametro senza pagare il costo della griglia
-    intera. I risultati prodotti in questa modalita' non entrano in nessuna
+    intera. I risultati prodotti in questa modalità non entrano in nessuna
     tabella del progetto.
     """
     reduced = {}
@@ -127,7 +127,7 @@ def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_j
                 estimator=spec.estimator,
                 grid=reduced_grid(spec.grid),
                 reader=spec.reader,
-                note=spec.note + " (griglia ridotta, modalita' di convalida)",
+                note=spec.note + " (griglia ridotta, modalità di convalida)",
             )
 
         run = run_grid_model(
@@ -159,9 +159,9 @@ def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_j
         # Numero di colonne effettivamente generate dall'espansione, contro
         # quelle che la configurazione selezionata produrrebbe se ogni variabile
         # le ricevesse tutte. La differenza sono gli intervalli degeneri rimossi
-        # dalla discretizzazione su variabili a pochi valori distinti: e' la
-        # quantita' da cui si legge quel fenomeno, che nel registro
-        # dell'esecuzione non compare piu' come avviso ripetuto.
+        # dalla discretizzazione su variabili a pochi valori distinti: è la
+        # quantità da cui si legge quel fenomeno, che nel registro
+        # dell'esecuzione non compare più come avviso ripetuto.
         if key == "step_functions" and run.coefficients is not None:
             produced = len(run.coefficients)
             expected = len(design.features) * int(run.config["model__expand__n_bins"])

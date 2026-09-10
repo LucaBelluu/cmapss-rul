@@ -1,18 +1,18 @@
 """Composizione di pre-processing e modello.
 
 Ruolo nel progetto: costruisce l'oggetto che viene passato al protocollo di
-valutazione. Tutto cio' che precede il modello (selezione delle colonne,
+valutazione. Tutto ciò che precede il modello (selezione delle colonne,
 standardizzazione) sta dentro la pipeline e viene quindi adattato sulla sola
 parte di addestramento di ogni fold, mai sull'intero insieme.
 
 Riceve: uno stimatore di regressione e, opzionalmente, l'elenco delle colonne
 da usare. Produce: una Pipeline di scikit-learn.
 
-La standardizzazione e' applicata a tutti i modelli, anche a quelli per cui e'
+La standardizzazione è applicata a tutti i modelli, anche a quelli per cui è
 irrilevante (alberi e insiemi di alberi). Una pipeline differenziata per
 famiglia introdurrebbe una differenza di condizioni fra modelli confrontati,
-che e' esattamente cio' che il protocollo deve escludere; il costo sugli
-alberi e' trascurabile.
+che è esattamente ciò che il protocollo deve escludere; il costo sugli
+alberi è trascurabile.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from sklearn.preprocessing import StandardScaler
 def build_pipeline(estimator, *, columns: list[str] | None = None, scale: bool = True) -> Pipeline:
     """Compone selezione delle colonne, standardizzazione e modello.
 
-    columns limita la matrice alle colonne indicate ed e' usato dalle baseline,
+    columns limita la matrice alle colonne indicate ed è usato dalle baseline,
     che devono vedere un sottoinsieme delle variabili disponibili senza che la
     matrice di progetto venga ricostruita in modo diverso.
     """

@@ -2971,3 +2971,154 @@ separa cambia da un sottoinsieme all'altro.
 La correzione è coerente con il controllo di sensibilità alla censura registrato il 09-09, dove
 nel regime censurato il divario del modello additivo dal migliore vale 0,67 dispersioni su FD001
 e 1,75 su FD003.
+
+## [10-09-2026] — Chiusura della repository: README, riproducibilità dichiarata e igiene formale
+
+### Il README come unico documento argomentativo
+
+Ho scritto `README.md`, che era l'ultimo artefatto mancante. Con il report
+separato già escluso, il README è il documento che porta l'argomentazione, e
+deve reggere da solo davanti a un lettore che non ha altre fonti.
+
+Ho scelto un impianto argomentativo invece che cronologico. Motivo: la consegna
+chiede di individuare il miglior modello, e la risposta di questo progetto non è
+un nome ma una struttura a tre gradini con un vertice non assegnabile su FD001.
+Una risposta di questo tipo enunciata in fondo al documento sembra una resa;
+enunciata presto e poi difesa è un risultato. Il documento stabilisce quindi
+cosa sostiene nella panoramica, espone i dati e il protocollo che rendono
+credibili i numeri, presenta la graduatoria, e solo dopo commenta i quattro
+blocchi come risposta alla domanda su perché ciascuna famiglia stia dove sta.
+Alternativa scartata: l'ordine cronologico che ricalca i sei notebook, che
+avrebbe reso il README un loro indice e avrebbe duplicato la spiegazione su due
+livelli.
+
+Il commento dei modelli è per famiglia, con ogni modello nominato nel punto in
+cui ha un comportamento proprio. Motivo: otto modelli lineari che stanno entro
+0,03 cicli non producono otto commenti diversi, e una sezione per ciascuno dei
+ventidue avrebbe prodotto ripetizione. La copertura resta verificabile perché
+ogni modello ha la sua riga nelle tabelle e una tabella di corrispondenza elenca
+i ventidue con il laboratorio di provenienza.
+
+Ho riscritto il documento una seconda volta perché la prima versione, a 719
+righe e circa 15.000 parole, era troppo lunga e troppo discorsiva per il suo
+lettore, che è un docente di Machine Learning e non ha bisogno delle
+spiegazioni divulgative che quella versione conteneva. La versione finale ha 641
+righe e circa 12.900 parole, di cui 10.100 di prosa, e incorpora 16 figure sulle
+51 disponibili. Il taglio ha riguardato la prosa esplicativa e i racconti estesi
+dei problemi tecnici, che restano nel diario. Non ha riguardato le tabelle dei
+risultati, i limiti dichiarati accanto al risultato che li produce e i numeri
+dentro le affermazioni, che sono la parte che regge una lettura critica.
+
+Limite dichiarato: una decina di numeri citati nel README provengono da misure
+registrate qui e non da un artefatto versionato (la quota di righe al valore di
+soglia nelle due popolazioni, la curva della perdita della rete, l'impurità
+della radice, i tempi della ricerca esaustiva, la tolleranza del controllo
+algebrico). Un lettore che apre solo `results/` non può ricontrollarli.
+
+### Decisioni di forma sul README
+
+Niente tempi di esecuzione. Motivo: non ho un registro dei tempi per script, e
+un tempo senza la macchina su cui è stato misurato non è informazione. Per la
+stessa ragione non compare una macchina di riferimento. La sezione di
+riproduzione ordina però gli script per classe di costo relativo, ricavata dai
+tempi di ricerca registrati negli artefatti di diagnostica, così che chi clona
+sappia quali script durano ore prima di lanciarli.
+
+Nessuna licenza. Motivo: la repository è consegna d'esame e portfolio, non
+materiale destinato al riuso, e un file di licenza si aggiunge in qualsiasi
+momento senza toccare altro.
+
+### Riproducibilità verificata invece che asserita
+
+Ho ricostruito l'ambiente da zero in un ambiente vuoto con Python 3.12: le 112
+versioni fissate in `requirements.txt` si risolvono tutte, senza conflitti e
+senza pin irreperibili, e l'installazione completa va a buon fine. Tutti e 17 i
+moduli di `src/` si importano, e 14 script su 16 espongono l'interfaccia da riga
+di comando. I due che non la espongono, `run_exploration` e `verify_raw_data`,
+non hanno argparse per costruzione e falliscono soltanto perché i dati grezzi non
+sono presenti, con un messaggio che indica la cartella attesa e rimanda alle
+istruzioni di acquisizione.
+
+Limite dichiarato: la ricostruzione è stata verificata su Linux mentre il
+progetto gira su macOS, quindi l'insieme delle dipendenze transitive differisce
+(su Linux XGBoost tira dentro `nvidia-nccl-cu13`, su macOS richiede invece
+`llvm-openmp` da conda, che resta la dipendenza non descritta dal manifesto).
+Quello che la verifica stabilisce è che il file di requisiti è risolvibile e
+coerente, non che l'ambiente macOS sia riproducibile solo da esso.
+
+### Difetti formali chiusi
+
+Il file di `src/` si chiamava letteralmente `__init__.py ` con uno spazio
+finale, quindi il pacchetto non aveva un `__init__.py` valido e funzionava solo
+perché Python trattava la cartella come namespace package. Rinominato.
+
+La traslitterazione ASCII degli accenti era più estesa di quanto pensassi: non
+riguardava un solo notebook ma quattro (dal 02 al 05, con 54, 59, 72 e 80
+occorrenze nella sola prosa) e anche i commenti e le docstring di `src/` e
+`scripts/`. Lo stesso spartiacque valeva per il kernel dichiarato nei metadati,
+`cmapss-rul` sui notebook 01 e 06 e `python3` sugli altri quattro.
+
+Ho normalizzato con un elenco chiuso di 63 parole italiane, ricavato estraendo
+tutti i token vocale più apostrofo presenti nella repository e verificandoli uno
+per uno in contesto, invece che con una regola generica. Motivo: una
+sostituzione cieca avrebbe colpito le stringhe di codice che finiscono per
+apostrofo, come i nomi di colonna `'rmse'` e `'feature'` o i parametri
+`'degree'` e `'lasso'`. L'etichetta di blocco `Superamento della linearita'` è
+stata esclusa di proposito, perché è un valore scritto dentro cinque tabelle di
+`results/` e cambiarla manderebbe codice e artefatti fuori sincrono. Sono 1.752
+sostituzioni su 22 file Python e 5 notebook.
+
+La normalizzazione l'ho verificata invece di fidarmene: per ciascuno dei 34 file
+Python ho confrontato la sequenza dei token che non sono commenti né stringhe,
+identica ovunque, e tutti i file compilano; sui sei notebook ho confrontato
+output, contatori di esecuzione e struttura del codice, identici. Nove righe di
+codice non commento risultano modificate, e sono titoli di grafico ed etichette
+di assi nei notebook 04 e 05: quelle figure cambiano davvero, ed è il
+cambiamento voluto.
+
+Il notebook 01 era stato eseguito in un kernel che aveva già eseguito 37 celle,
+con contatori da 38 a 56. Tutti e sei i notebook sono stati rieseguiti dal
+principio in kernel pulito: contatori da 1 a n e kernel `cmapss-rul` ovunque.
+
+Il commento del `.gitignore` sulla cartella dei dati descriveva una procedura
+inesistente, dicendo che i dati sono rigenerabili con lo script di acquisizione,
+che era stato valutato e scartato. Riscritto. Le regole le ho verificate con
+`git check-ignore` invece di darle per buone. Ho tolto i `.gitkeep` di
+`notebooks/`, `scripts/`, `src/`, `results/figures/` e `results/tables/`, ormai
+inutili perché quelle cartelle hanno contenuto; restano quelli di `data/` e
+`experiments/`, che sono le uniche cartelle vuote per costruzione.
+
+ESITO: la repository contiene sei notebook eseguiti in kernel pulito, 51 figure
+e 50 tabelle in `results/`, il README come documento argomentativo
+autoconclusivo, e un ambiente dichiarato e verificato.
+
+## [10-09-2026] — CORREZIONE: riferimento lineare sbagliato in guadagno_su_blocco_lineare.csv
+
+Rieseguendo i notebook ho trovato che `results/tables/guadagno_su_blocco_lineare.csv`
+cambiava, mentre le altre 49 tabelle restavano identiche. Non era rumore
+numerico: cambiava il modello preso come riferimento lineare su FD001, da
+`Regressione lineare multipla` a 20,34522 a `Ridge` a 20,32697.
+
+Causa radice: il file versionato era in contraddizione con un altro file
+versionato. `FD001_confronto_blocco_lineare.csv` riporta Ridge come miglior
+modello lineare di FD001, con divario 0,00, mentre la tabella del guadagno usava
+come riferimento la regressione lineare multipla, che in quella stessa tabella è
+settima. Il notebook prende come riferimento il miglior modello lineare, e su
+FD003 lo faceva correttamente scegliendo forward stepwise. La tabella del
+guadagno era quindi stata prodotta quando l'artefatto del blocco lineare di
+FD001 era ancora quello incompleto lasciato dalla sovrascrittura parziale, e non
+era mai stata rigenerata dopo il ripristino.
+
+Cosa cambia: il guadagno del blocco non lineare su FD001 passa da 2,88 a 2,86
+cicli e da 2,41 a 2,44 dispersioni. FD003 non cambia. La conclusione del blocco
+non si muove, perché il divario resta ampiamente sopra la soglia di leggibilità
+del protocollo, e la struttura per gradini è invariata.
+
+Ho tenuto la versione rigenerata e allineato il numero nel README. Questo rende
+superato il valore riportato nella voce sul blocco che supera la linearità.
+
+Nota di metodo: la rigenerazione completa dei notebook in kernel pulito ha fatto
+emergere una incoerenza fra artefatti che nessun controllo automatico aveva
+intercettato, perché la verifica di identità delle partizioni confronta le
+tabelle dei blocchi fra loro e non le tabelle derivate con le tabelle di
+partenza.

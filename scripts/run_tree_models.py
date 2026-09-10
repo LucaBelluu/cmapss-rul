@@ -8,8 +8,8 @@ Ruolo nel progetto
     blocco, quali letture ne vengono estratte e dove ne vanno depositati gli
     artefatti.
 
-    I laboratori 9 e 10 sono uniti in un blocco solo perche' la lettura centrale
-    della famiglia e' albero singolo contro aggregazione contro addizione, cioe'
+    I laboratori 9 e 10 sono uniti in un blocco solo perché la lettura centrale
+    della famiglia è albero singolo contro aggregazione contro addizione, cioè
     riduzione della varianza contro riduzione della distorsione: distribuirla su
     due tabelle la trasformerebbe in un rimando fra artefatti.
 
@@ -26,7 +26,7 @@ Cosa produce
     - `{SUBSET}_cv_folds.csv`, le metriche di ogni modello su ognuna delle 15
       partizioni di confronto;
     - `{SUBSET}_grids.csv`, la griglia completa di ogni modello;
-    - `{SUBSET}_importances.csv`, l'importanza per riduzione di impurita' di
+    - `{SUBSET}_importances.csv`, l'importanza per riduzione di impurità di
       ciascuna variabile in ciascun modello;
     - `{SUBSET}_permutation_importances.csv`, l'importanza per permutazione,
       misurata sulle parti di verifica delle partizioni del seme di ricerca;
@@ -41,17 +41,17 @@ Cosa produce
     selezionati vengono riaddestrati e valutati una volta sola.
 
 L'albero serializzato
-    La struttura dell'albero potato e' una delle letture richieste dal
-    laboratorio 9 e va disegnata, non descritta. Il disegno e' compito del
-    notebook, che pero' non addestra: l'albero viene percio' riaddestrato qui
-    sull'intera parte di addestramento, come gia' avviene per l'estrazione dei
+    La struttura dell'albero potato è una delle letture richieste dal
+    laboratorio 9 e va disegnata, non descritta. Il disegno è compito del
+    notebook, che però non addestra: l'albero viene perciò riaddestrato qui
+    sull'intera parte di addestramento, come già avviene per l'estrazione dei
     parametri leggibili di ogni modello, e depositato accanto agli altri
-    artefatti. Il file non e' versionato, come tutto cio' che sta in
-    `experiments/`: la figura che ne deriva lo e'.
+    artefatti. Il file non è versionato, come tutto ciò che sta in
+    `experiments/`: la figura che ne deriva lo è.
 
 Colonna `n_nonzero` nella tabella di confronto
     Conta le variabili che il modello ha effettivamente usato per almeno una
-    divisione, cioe' quelle con importanza non nulla. E' confrontabile lungo
+    divisione, cioè quelle con importanza non nulla. È confrontabile lungo
     l'intera riga del blocco e con gli altri blocchi, dove la stessa colonna
     conta i coefficienti non annullati.
 
@@ -60,11 +60,11 @@ Come si lancia
     python -m scripts.run_tree_models --subsets FD001 --quick
     python -m scripts.run_tree_models --models random_forest --n-jobs 4
 
-    La modalita' `--quick` esegue la catena su griglie ridotte e serve a
+    La modalità `--quick` esegue la catena su griglie ridotte e serve a
     convalidarla prima di lanciare la versione completa.
 
     Il numero di processi paralleli va ridotto sulla foresta e sul bagging se la
-    memoria e' scarsa: un insieme di 300 alberi non potati ha quasi quattro
+    memoria è scarsa: un insieme di 300 alberi non potati ha quasi quattro
     milioni di nodi e occupa circa 240 MB, e la ricerca su griglia ne tiene in
     vita una copia per processo.
 """
@@ -93,7 +93,7 @@ from src.trees import permutation_importances, tree_summary
 
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "tree_models"
 
-# Modello di cui viene serializzata la struttura. E' la lettura con cui il
+# Modello di cui viene serializzata la struttura. È la lettura con cui il
 # laboratorio 9 commenta la potatura, e non ha equivalente negli altri modelli
 # del blocco, che sono insiemi di centinaia di alberi.
 STRUCTURE_MODEL = "tree"
@@ -105,10 +105,10 @@ PERMUTATION_REPEATS = 5
 
 
 def reduced_grid(grid: dict) -> dict:
-    """Griglia ridotta agli estremi e al centro, per la modalita' di convalida.
+    """Griglia ridotta agli estremi e al centro, per la modalità di convalida.
 
     Esercita la catena su ogni parametro senza pagare il costo della griglia
-    intera. I risultati prodotti in questa modalita' non entrano in nessuna
+    intera. I risultati prodotti in questa modalità non entrano in nessuna
     tabella del progetto.
     """
     reduced = {}
@@ -157,7 +157,7 @@ def run_subset(
                 estimator=spec.estimator,
                 grid=reduced_grid(spec.grid),
                 reader=spec.reader,
-                note=spec.note + " (griglia ridotta, modalita' di convalida)",
+                note=spec.note + " (griglia ridotta, modalità di convalida)",
             )
 
         run = run_grid_model(
@@ -187,7 +187,7 @@ def run_subset(
             )
 
         # L'albero potato viene riaddestrato sull'intera parte di addestramento
-        # e conservato. Il motore di esperimento compie gia' questo
+        # e conservato. Il motore di esperimento compie già questo
         # riaddestramento per estrarre i parametri leggibili, ma non restituisce
         # il modello: ripeterlo qui costa un solo adattamento ed evita di
         # cambiare la firma del motore per il bisogno di un unico modello.
@@ -197,12 +197,12 @@ def run_subset(
             run.diagnostics.update(structure)
             print(
                 f"    albero potato: {structure['n_leaves']} foglie, "
-                f"profondita' {structure['depth']}"
+                f"profondità {structure['depth']}"
             )
 
         if with_permutation:
             # Misurata sulle partizioni del seme di ricerca e non sulle quindici
-            # di confronto: non e' una stima di prestazione e non entra in
+            # di confronto: non è una stima di prestazione e non entra in
             # graduatoria, quindi la ripetizione su tre semi ne triplicherebbe
             # il costo senza cambiarne la lettura.
             frame = permutation_importances(
@@ -216,7 +216,7 @@ def run_subset(
             permutation_frames.append(frame)
             top = frame.iloc[0]
             print(
-                f"    permutazione: variabile piu' rilevante {top['feature']}, "
+                f"    permutazione: variabile più rilevante {top['feature']}, "
                 f"{top['importance_mean']:.2f} cicli di aumento dell'errore"
             )
 
@@ -270,7 +270,7 @@ def main() -> None:
     parser.add_argument(
         "--no-permutation",
         action="store_true",
-        help="salta l'importanza per permutazione, che e' la parte piu' lenta",
+        help="salta l'importanza per permutazione, che è la parte più lenta",
     )
     parser.add_argument("--n-jobs", type=int, default=-1)
     args = parser.parse_args()

@@ -8,8 +8,8 @@ Ruolo nel progetto
     blocco, quali letture ne vengono estratte e dove ne vanno depositati gli
     artefatti.
 
-    Le tre varianti di kernel e la rete stanno in un blocco solo perche' la
-    lettura centrale e' la stessa per entrambe le famiglie: cosa guadagna una
+    Le tre varianti di kernel e la rete stanno in un blocco solo perché la
+    lettura centrale è la stessa per entrambe le famiglie: cosa guadagna una
     funzione non lineare stimata senza espansione esplicita delle variabili
     rispetto ai modelli che quella espansione la costruiscono. Separarle
     produrrebbe due tabelle da leggere l'una accanto all'altra.
@@ -29,7 +29,7 @@ Cosa produce
       partizioni di confronto;
     - `{SUBSET}_grids.csv`, la griglia completa di ogni modello;
     - `{SUBSET}_coefficients.csv`, i coefficienti della variante a kernel
-      lineare, che e' l'unico modello del blocco a esporli;
+      lineare, che è l'unico modello del blocco a esporli;
     - `{SUBSET}_permutation_importances.csv`, l'importanza per permutazione di
       ciascuna variabile in ciascun modello, misurata sulle parti di verifica
       delle partizioni del seme di ricerca;
@@ -41,25 +41,25 @@ Cosa produce
     quando tutti i blocchi del confronto sono conclusi, e solo allora i modelli
     selezionati vengono riaddestrati e valutati una volta sola.
 
-Perche' l'importanza per permutazione anche qui
+Perché l'importanza per permutazione anche qui
     Tre modelli su quattro non espongono coefficienti, quindi senza questa
     misura la loro riga della tabella resterebbe senza alcuna lettura sulle
     variabili, e il blocco non sarebbe commentabile alla pari degli altri. La
-    misura e' quella del blocco ad albero, sulle stesse partizioni e con lo
+    misura è quella del blocco ad albero, sulle stesse partizioni e con lo
     stesso numero di ripetizioni, quindi i valori sono confrontabili fra i due
     blocchi.
 
-    E' anche la parte piu' lenta dell'esecuzione, perche' richiede una
+    È anche la parte più lenta dell'esecuzione, perché richiede una
     predizione per ogni variabile e per ogni ripetizione, e la predizione di un
     modello a margine costa quanto il calcolo del kernel contro tutti i suoi
     vettori di supporto. L'opzione `--no-permutation` la salta.
 
 Colonna `n_nonzero` nella tabella di confronto
-    E' definita per la sola variante a kernel lineare, dove conta i coefficienti
+    È definita per la sola variante a kernel lineare, dove conta i coefficienti
     non nulli come negli altri blocchi. Per gli altri tre modelli resta vuota:
     la funzione stimata non ha coefficienti sulle variabili, e riempire la
-    colonna con il numero di vettori di supporto vi metterebbe una quantita'
-    diversa sotto la stessa intestazione. Il numero di vettori di supporto e' in
+    colonna con il numero di vettori di supporto vi metterebbe una quantità
+    diversa sotto la stessa intestazione. Il numero di vettori di supporto è in
     `{SUBSET}_diagnostics.csv`.
 
 Come si lancia
@@ -67,7 +67,7 @@ Come si lancia
     python -m scripts.run_kernel_models --subsets FD001 --quick
     python -m scripts.run_kernel_models --models svr_rbf --no-permutation
 
-    La modalita' `--quick` esegue la catena su griglie ridotte e serve a
+    La modalità `--quick` esegue la catena su griglie ridotte e serve a
     convalidarla prima di lanciare la versione completa.
 """
 
@@ -95,7 +95,7 @@ from src.trees import permutation_importances
 
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "kernel_models"
 
-# Modello di cui vengono estratti i coefficienti. E' l'unico del blocco la cui
+# Modello di cui vengono estratti i coefficienti. È l'unico del blocco la cui
 # funzione stimata resta lineare nelle variabili.
 COEFFICIENT_MODEL = "svr_linear"
 
@@ -104,16 +104,16 @@ COEFFICIENT_MODEL = "svr_linear"
 NETWORK_MODEL = "mlp"
 
 # Ripetizioni della permutazione di ciascuna variabile su ciascuna partizione.
-# E' lo stesso numero usato dal blocco ad albero: un numero diverso renderebbe
+# È lo stesso numero usato dal blocco ad albero: un numero diverso renderebbe
 # le due tabelle non confrontabili.
 PERMUTATION_REPEATS = 5
 
 
 def reduced_grid(grid: dict) -> dict:
-    """Griglia ridotta agli estremi e al centro, per la modalita' di convalida.
+    """Griglia ridotta agli estremi e al centro, per la modalità di convalida.
 
     Esercita la catena su ogni parametro senza pagare il costo della griglia
-    intera. I risultati prodotti in questa modalita' non entrano in nessuna
+    intera. I risultati prodotti in questa modalità non entrano in nessuna
     tabella del progetto.
     """
     reduced = {}
@@ -128,7 +128,7 @@ def reduced_grid(grid: dict) -> dict:
 def structural_summary(key: str, estimator, design) -> dict:
     """Riepilogo strutturale del modello selezionato, riaddestrato per intero.
 
-    Il riaddestramento sull'intera parte di addestramento e' lo stesso che il
+    Il riaddestramento sull'intera parte di addestramento è lo stesso che il
     motore di esperimento compie per estrarre i parametri leggibili, ma il
     motore non restituisce il modello adattato: ripeterlo qui costa un solo
     adattamento ed evita di cambiare la firma del motore per il bisogno di un
@@ -180,7 +180,7 @@ def run_subset(
                 estimator=spec.estimator,
                 grid=reduced_grid(spec.grid),
                 reader=spec.reader,
-                note=spec.note + " (griglia ridotta, modalita' di convalida)",
+                note=spec.note + " (griglia ridotta, modalità di convalida)",
             )
 
         run = run_grid_model(
@@ -209,8 +209,8 @@ def run_subset(
         if run.diagnostics.get("convergence_warnings"):
             # Sui modelli a margine l'avviso segnala una stima troncata dal tetto
             # alle iterazioni, quindi un punteggio non confrontabile. Sulla rete
-            # segnala l'arresto al numero di iterazioni previsto, che e' il
-            # meccanismo voluto: la distinzione e' nel messaggio, non nel conteggio.
+            # segnala l'arresto al numero di iterazioni previsto, che è il
+            # meccanismo voluto: la distinzione è nel messaggio, non nel conteggio.
             kind = (
                 "arresti al numero di iterazioni previsto"
                 if key == NETWORK_MODEL
@@ -244,7 +244,7 @@ def run_subset(
             permutation_frames.append(frame)
             top = frame.iloc[0]
             print(
-                f"    permutazione: variabile piu' rilevante {top['feature']}, "
+                f"    permutazione: variabile più rilevante {top['feature']}, "
                 f"{top['importance_mean']:.2f} cicli di aumento dell'errore"
             )
 
@@ -298,7 +298,7 @@ def main() -> None:
     parser.add_argument(
         "--no-permutation",
         action="store_true",
-        help="salta l'importanza per permutazione, che e' la parte piu' lenta",
+        help="salta l'importanza per permutazione, che è la parte più lenta",
     )
     parser.add_argument("--n-jobs", type=int, default=-1)
     args = parser.parse_args()

@@ -38,7 +38,7 @@ Come si lancia
     python -m scripts.run_linear_models --subsets FD001 --quick
     python -m scripts.run_linear_models --models ridge lasso
 
-    La modalita' `--quick` esegue la catena su una griglia ridotta e senza
+    La modalità `--quick` esegue la catena su una griglia ridotta e senza
     ricerca esaustiva, e serve a convalidarla prima di lanciare la versione
     completa.
 """
@@ -78,7 +78,7 @@ from src.target import RUL_CAP
 OUTPUT_DIR = PROJECT_ROOT / "experiments" / "linear_models"
 
 # Metodo di selezione su cui viene misurato l'ottimismo della selezione non
-# annidata. La forward e' scelta perche' e' l'unico dei tre il cui costo
+# annidata. La forward è scelta perché è l'unico dei tre il cui costo
 # annidato resta trascurabile: la misura vale come cautela di lettura per tutti
 # e tre, che condividono lo stesso motore di stima e lo stesso criterio.
 NESTED_CHECK_METHOD = "forward_stepwise"
@@ -107,7 +107,7 @@ def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_j
         print(f"\n[{key}] ricerca e rivalutazione")
         spec_used = spec
         if quick and callable(spec.grid) is False and spec.grid:
-            # In modalita' di convalida la griglia e' ridotta ai suoi estremi e
+            # In modalità di convalida la griglia è ridotta ai suoi estremi e
             # al centro: esercita la catena senza pagarne il costo.
             reduced = {
                 name: list(values)[:: max(1, len(list(values)) // 3)]
@@ -119,7 +119,7 @@ def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_j
                 estimator=spec.estimator,
                 grid=reduced,
                 reader=spec.reader,
-                note=spec.note + " (griglia ridotta, modalita' di convalida)",
+                note=spec.note + " (griglia ridotta, modalità di convalida)",
             )
         run = run_grid_model(
             spec_used,
@@ -142,7 +142,7 @@ def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_j
         if method not in models:
             continue
         if quick and method == "best_subset":
-            print("\n[best_subset] saltata in modalita' di convalida")
+            print("\n[best_subset] saltata in modalità di convalida")
             continue
         print(f"\n[{method}] ricerca del sottoinsieme e rivalutazione")
         run = run_selection_model(
@@ -189,7 +189,7 @@ def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_j
         outputs["diagnostics"] = diagnostics
 
     # Percorsi dei coefficienti: descrivono come la penalizzazione spegne le
-    # variabili, ed e' la lettura con cui il laboratorio commenta Ridge e Lasso.
+    # variabili, ed è la lettura con cui il laboratorio commenta Ridge e Lasso.
     if not quick:
         paths = []
         for label, factory, values in (
@@ -215,7 +215,7 @@ def run_subset(subset: str, cap: int | None, models: list[str], quick: bool, n_j
                 f"{reported.iloc[0]:.2f} riportato in tabella"
             )
             print(
-                f"    cardinalita' selezionate nei fold: "
+                f"    cardinalità selezionate nei fold: "
                 f"{sorted(nested['k'].unique().tolist())}"
             )
             outputs["nested_check"] = nested

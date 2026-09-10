@@ -3,14 +3,14 @@
 Ruolo nel progetto
     Produce il materiale con cui si commenta l'asimmetria fra i due sottoinsiemi
     in perimetro. FD001 ha un solo modo di guasto e FD003 ne ha due, e il
-    confronto fra modelli mostra su FD003 traiettorie piu' lunghe, dispersione
+    confronto fra modelli mostra su FD003 traiettorie più lunghe, dispersione
     quasi doppia delle durate e punteggi migliori. La domanda che questo passo
-    chiude e' se la differenza sia visibile nella forma delle traiettorie
-    guardandole senza il target, cioe' se un metodo non supervisionato trovi su
-    FD003 una struttura di gruppi che su FD001 non c'e'.
+    chiude è se la differenza sia visibile nella forma delle traiettorie
+    guardandole senza il target, cioè se un metodo non supervisionato trovi su
+    FD003 una struttura di gruppi che su FD001 non c'è.
 
-    Il risultato e' strumento di commento e non entra in graduatoria. Il task del
-    progetto e' di regressione e i metodi non supervisionati del laboratorio 12
+    Il risultato è strumento di commento e non entra in graduatoria. Il task del
+    progetto è di regressione e i metodi non supervisionati del laboratorio 12
     rientrano come strumenti di esplorazione.
 
 Cosa riceve
@@ -27,40 +27,40 @@ Cosa produce
       numero di gruppi;
     - `{NOME}_cluster_labels.csv`, le etichette assegnate a ciascun motore, con
       la durata della traiettoria e le coordinate della proiezione;
-    - `{NOME}_kmeans_seeds.csv`, la sensibilita' di K-Means al seme;
+    - `{NOME}_kmeans_seeds.csv`, la sensibilità di K-Means al seme;
     - `{NOME}_linkage.csv`, la matrice di aggregazione del dendrogramma.
 
     Per ciascun sottoinsieme produce inoltre `{SUBSET}_senza_durata_cluster_scores.csv`
     e `{SUBSET}_senza_durata_cluster_labels.csv`, descritti sotto.
 
 Le due analisi
-    Dentro ciascun sottoinsieme, che e' l'analisi principale e risponde alla
-    domanda sui modi di guasto. Qui non esiste etichetta di riferimento, perche'
-    il modo di guasto dei singoli motori non e' distribuito con il dataset:
+    Dentro ciascun sottoinsieme, che è l'analisi principale e risponde alla
+    domanda sui modi di guasto. Qui non esiste etichetta di riferimento, perché
+    il modo di guasto dei singoli motori non è distribuito con il dataset:
     l'indice di Rand corretto misura l'accordo fra due raggruppamenti diversi e
     non la loro correttezza, e il numero di gruppi si legge sulla silhouette.
 
     Sui duecento motori dei due sottoinsiemi uniti, come coda. Qui l'appartenenza
-    al sottoinsieme e' un'etichetta esterna vera, ed e' l'unico punto del
+    al sottoinsieme è un'etichetta esterna vera, ed è l'unico punto del
     progetto in cui l'indice di Rand corretto ha il significato che ha nel
-    laboratorio. La domanda e' se un metodo non supervisionato separi le due
+    laboratorio. La domanda è se un metodo non supervisionato separi le due
     popolazioni senza sapere da quale file provengono.
 
     L'unione usa le sole variabili presenti in entrambi i sottoinsiemi:
-    `sensor_10` e' costante su FD001 e non lo e' su FD003, quindi entra nella
+    `sensor_10` è costante su FD001 e non lo è su FD003, quindi entra nella
     matrice del secondo e non in quella dell'unione.
 
 Controllo sulla durata
-    La durata della traiettoria e' una delle variabili del raggruppamento e ne e'
-    anche la lettura piu' immediata, quindi una separazione che si legga sulle
+    La durata della traiettoria è una delle variabili del raggruppamento e ne è
+    anche la lettura più immediata, quindi una separazione che si legga sulle
     durate potrebbe essere prodotta dalla durata stessa invece che dallo stato
     dei sensori. Il controllo ripete l'analisi sulle sole letture dei sensori e
     ne registra silhouette ed etichette: se la partizione non cambia, la
-    separazione e' prodotta dai sensori e la differenza di durata ne e' una
+    separazione è prodotta dai sensori e la differenza di durata ne è una
     conseguenza.
 
     Del controllo vengono scritti punteggi ed etichette e non l'intera sequenza:
-    le variabili per motore sono quelle gia' scritte meno una colonna, e la
+    le variabili per motore sono quelle già scritte meno una colonna, e la
     matrice di aggregazione serve al dendrogramma dell'analisi principale.
 
 Come si lancia
@@ -106,9 +106,9 @@ def analyse(
 ) -> dict:
     """Esegue la sequenza completa su una tabella di variabili per motore.
 
-    `durations` esiste perche' il controllo sulla durata passa una matrice che
-    quella colonna non contiene, mentre le etichette la riportano comunque: e' la
-    quantita' con cui i gruppi vengono descritti, anche quando non partecipa al
+    `durations` esiste perché il controllo sulla durata passa una matrice che
+    quella colonna non contiene, mentre le etichette la riportano comunque: è la
+    quantità con cui i gruppi vengono descritti, anche quando non partecipa al
     calcolo delle distanze.
     """
     matrix = standardize(features)
@@ -139,7 +139,7 @@ def analyse(
     columns += ["dimensione_minima", "dimensione_massima"]
     print(scores[columns].round(3).to_string(index=False))
 
-    print("\nstabilita' di K-Means al variare del seme")
+    print("\nstabilità di K-Means al variare del seme")
     print(
         seeds.pivot_table(
             index="n_clusters", columns="seme", values="ari_vs_seme_riferimento"
@@ -187,7 +187,7 @@ def main() -> None:
         print("\nunione non prodotta: richiede entrambi i sottoinsiemi")
         return
 
-    # L'unione usa le sole variabili comuni. Gli identificativi di unita' si
+    # L'unione usa le sole variabili comuni. Gli identificativi di unità si
     # ripetono fra sottoinsiemi (1..100 in entrambi), quindi vengono resi
     # distinti prima di concatenare: senza questo passaggio due motori diversi
     # occuperebbero la stessa riga dell'indice.

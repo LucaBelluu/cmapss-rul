@@ -4,7 +4,7 @@ Ruolo nel progetto
     I quattro blocchi hanno selezionato una configurazione per ciascun modello e
     ne hanno registrato l'etichetta nella colonna `config` delle tabelle. Questo
     modulo ricostruisce da quell'etichetta lo stimatore corrispondente, pronto
-    per essere riaddestrato. E' il ponte fra la graduatoria, che e' fatta di
+    per essere riaddestrato. È il ponte fra la graduatoria, che è fatta di
     tabelle, e le letture della fase di chiusura, che hanno bisogno di modelli.
 
 Cosa riceve
@@ -26,12 +26,12 @@ Come avviene la ricostruzione
     valutato.
 
     La corrispondenza deve essere unica: se nessuna combinazione della griglia
-    produce l'etichetta registrata, o se piu' di una la produce, la ricostruzione
+    produce l'etichetta registrata, o se più di una la produce, la ricostruzione
     fallisce invece di scegliere. Il primo caso si verifica se il registro
-    attualmente nella repository non e' quello che ha prodotto gli artefatti, e
-    e' quindi anche un controllo di coerenza fra codice e risultati.
+    attualmente nella repository non è quello che ha prodotto gli artefatti, e
+    è quindi anche un controllo di coerenza fra codice e risultati.
 
-    Il caso di parita' fra configurazioni e' risolto correttamente. Su FD001 due
+    Il caso di parità fra configurazioni è risolto correttamente. Su FD001 due
     combinazioni della griglia della rete hanno lo stesso punteggio fino alla
     quattordicesima cifra, e la riga di rango primo nella tabella della griglia
     non identifica quindi da sola quella valutata: l'etichetta registrata nella
@@ -39,13 +39,13 @@ Come avviene la ricostruzione
 
 Modelli senza griglia
     La regressione lineare multipla, il bagging di alberi e le due baseline non
-    hanno iperparametri: la loro etichetta e' costante e la ricostruzione si
+    hanno iperparametri: la loro etichetta è costante e la ricostruzione si
     riduce alla composizione della pipeline.
 
 Metodi di selezione delle variabili
     Non hanno una griglia ma un percorso di ricerca, registrato in
-    `{SUBSET}_selection_history.csv`. Il modello selezionato e' la regressione
-    lineare sulle colonne del passo di errore minimo, e la cardinalita'
+    `{SUBSET}_selection_history.csv`. Il modello selezionato è la regressione
+    lineare sulle colonne del passo di errore minimo, e la cardinalità
     ricostruita viene confrontata con quella dell'etichetta.
 """
 
@@ -93,7 +93,7 @@ def _merged_registry() -> dict:
     for block in (LINEAR_MODELS, NONLINEAR_MODELS, TREE_MODELS, KERNEL_MODELS):
         for key, spec in block.items():
             if key in registry:
-                raise AssertionError(f"identificativo {key} presente in piu' di un blocco")
+                raise AssertionError(f"identificativo {key} presente in più di un blocco")
             registry[key] = spec
     return registry
 
@@ -126,7 +126,7 @@ def _match_configuration(spec, config: str, n_features: int) -> dict:
     if not matches:
         raise AssertionError(
             f"{spec.key}: nessuna configurazione della griglia attuale produce "
-            f"l'etichetta '{config}'. Il registro nella repository non e' quello "
+            f"l'etichetta '{config}'. Il registro nella repository non è quello "
             f"che ha prodotto gli artefatti."
         )
     if len(matches) > 1:
@@ -140,9 +140,9 @@ def _match_configuration(spec, config: str, n_features: int) -> dict:
 def _selection_features(subset: str, key: str, config: str) -> list[str]:
     """Colonne selezionate dal percorso di ricerca di un metodo di selezione.
 
-    Il criterio e' quello della ricerca: il passo di errore minimo lungo la
-    storia. La cardinalita' ottenuta viene confrontata con quella registrata
-    nell'etichetta, che e' l'unico controllo disponibile sul fatto che la storia
+    Il criterio è quello della ricerca: il passo di errore minimo lungo la
+    storia. La cardinalità ottenuta viene confrontata con quella registrata
+    nell'etichetta, che è l'unico controllo disponibile sul fatto che la storia
     su disco sia quella che ha prodotto la riga della tabella.
     """
     path = EXPERIMENTS_DIR / SELECTION_DIR / f"{subset}_selection_history.csv"
@@ -152,7 +152,7 @@ def _selection_features(subset: str, key: str, config: str) -> list[str]:
     history = pd.read_csv(path)
     history = history[history["model"] == key]
     if history.empty:
-        raise AssertionError(f"{subset}: il percorso di ricerca di {key} non e' negli artefatti")
+        raise AssertionError(f"{subset}: il percorso di ricerca di {key} non è negli artefatti")
 
     row = history.loc[history["cv_rmse_mean"].idxmin()]
     features = str(row["selected_features"]).split()
@@ -164,7 +164,7 @@ def _selection_features(subset: str, key: str, config: str) -> list[str]:
         )
     if len(features) != int(row["k"]):
         raise AssertionError(
-            f"{key} su {subset}: {len(features)} colonne per una cardinalita' di {row['k']}"
+            f"{key} su {subset}: {len(features)} colonne per una cardinalità di {row['k']}"
         )
     return features
 
@@ -173,7 +173,7 @@ def rebuild(key: str, config: str, design):
     """Stimatore corrispondente alla configurazione selezionata, non adattato.
 
     Ritorna una pipeline identica a quella valutata nel blocco di provenienza,
-    perche' costruita dallo stesso registro e con la stessa composizione di
+    perché costruita dallo stesso registro e con la stessa composizione di
     pre-processing.
     """
     if key in BASELINE_KEYS:
@@ -184,7 +184,7 @@ def rebuild(key: str, config: str, design):
         return build_pipeline(LinearRegression(), columns=features)
 
     if key not in REGISTRY:
-        raise KeyError(f"{key} non e' nel registro dei modelli")
+        raise KeyError(f"{key} non è nel registro dei modelli")
 
     spec = REGISTRY[key]
     parameters = _match_configuration(spec, config, len(design.features))
@@ -197,7 +197,7 @@ def rebuild_all(design, ranking: pd.DataFrame | None = None) -> list[dict]:
 
     Ritorna un record per modello con identificativo, etichetta estesa, blocco di
     provenienza, configurazione e stimatore. La ricostruzione dell'intera
-    graduatoria e' anche la verifica che il registro nella repository sia
+    graduatoria è anche la verifica che il registro nella repository sia
     coerente con tutti gli artefatti prodotti, e non solo con quelli del blocco
     che si sta leggendo.
     """

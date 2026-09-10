@@ -2,9 +2,9 @@
 
 Ruolo nel progetto
     Definisce le condizioni sotto cui ogni modello del confronto viene
-    valutato. E' l'unico punto in cui sono scritti lo schema di
+    valutato. È l'unico punto in cui sono scritti lo schema di
     partizionamento, il numero di fold, i semi e le metriche: ogni esperimento
-    passa da qui, e questo garantisce che il confronto avvenga a parita' di
+    passa da qui, e questo garantisce che il confronto avvenga a parità di
     condizioni.
 
 Cosa riceve
@@ -15,21 +15,21 @@ Cosa riceve
 Cosa produce
     Un DataFrame con una riga per fold contenente le metriche, i conteggi di
     righe e di motori e i tempi; su richiesta, le predizioni fuori fold. Non
-    scrive su disco: la persistenza e' compito degli script di orchestrazione.
+    scrive su disco: la persistenza è compito degli script di orchestrazione.
 
 Partizionamento
-    Avviene per unita' motore. Le righe di uno stesso motore sono cicli
+    Avviene per unità motore. Le righe di uno stesso motore sono cicli
     consecutivi della stessa traiettoria di degrado e non sono indipendenti:
     una partizione per riga collocherebbe osservazioni quasi identiche su
     entrambi i lati della verifica e produrrebbe una stima sistematicamente
     ottimistica. Lo schema usato (K-Fold con vincolo di gruppo) non compare nei
-    laboratori del corso: e' la trasposizione diretta del K-Fold a dati
+    laboratori del corso: è la trasposizione diretta del K-Fold a dati
     raggruppati, resa obbligatoria dalla struttura del dataset.
 
 Selezione e stima
-    La cross-validation non e' annidata: le stesse partizioni servono a
+    La cross-validation non è annidata: le stesse partizioni servono a
     scegliere gli iperparametri e a riportare il punteggio della configurazione
-    scelta. Il punteggio riportato e' quindi ottimisticamente distorto. La
+    scelta. Il punteggio riportato è quindi ottimisticamente distorto. La
     stima non distorta proviene dall'insieme di verifica ufficiale, che non
     entra in nessuna scelta e viene letto una sola volta a graduatoria chiusa.
 """
@@ -58,8 +58,8 @@ class FoldSplit:
     """Una singola partizione, con l'indicazione del seme che l'ha generata.
 
     Tenere seme e indice del fold accanto agli indici permette di riportare la
-    dispersione dei risultati distinguendo la variabilita' fra fold dalla
-    variabilita' fra ripetizioni della partizione.
+    dispersione dei risultati distinguendo la variabilità fra fold dalla
+    variabilità fra ripetizioni della partizione.
     """
 
     seed: int
@@ -69,7 +69,7 @@ class FoldSplit:
 
 
 def make_splits(groups, n_splits: int = N_SPLITS, seeds=COMPARISON_SEEDS) -> list[FoldSplit]:
-    """Costruisce le partizioni per unita' motore, ripetute su piu' semi.
+    """Costruisce le partizioni per unità motore, ripetute su più semi.
 
     Ogni motore compare esattamente una volta nella parte di verifica di ogni
     ripetizione, e tutte le sue righe restano dalla stessa parte.
@@ -83,7 +83,7 @@ def make_splits(groups, n_splits: int = N_SPLITS, seeds=COMPARISON_SEEDS) -> lis
     placeholder = np.zeros(len(groups))
     for seed in seeds:
         # shuffle e random_state sono disponibili su GroupKFold dalla versione
-        # 1.6 di scikit-learn e sono cio' che rende ripetibile la partizione su
+        # 1.6 di scikit-learn e sono ciò che rende ripetibile la partizione su
         # semi diversi.
         cv = GroupKFold(n_splits=n_splits, shuffle=True, random_state=seed)
         for fold, (train_idx, valid_idx) in enumerate(cv.split(placeholder, groups=groups)):
@@ -99,7 +99,7 @@ def as_cv(splits) -> list[tuple[np.ndarray, np.ndarray]]:
 def check_no_group_leakage(groups, splits) -> None:
     """Verifica che nessun motore compaia da entrambe le parti di una partizione.
 
-    E' il controllo che rende falsificabile il vincolo su cui poggia l'intera
+    È il controllo che rende falsificabile il vincolo su cui poggia l'intera
     valutazione, invece di lasciarlo affidato alla correttezza dello splitter.
     """
     groups = np.asarray(groups)
@@ -115,10 +115,10 @@ def check_no_group_leakage(groups, splits) -> None:
 def regression_metrics(y_true, y_pred) -> dict[str, float]:
     """Metriche di regressione del corso.
 
-    RMSE e' la metrica di riferimento: e' nelle unita' del target (cicli) ed e'
+    RMSE è la metrica di riferimento: è nelle unità del target (cicli) ed è
     coerente con la perdita minimizzata dalla maggior parte dei modelli in
     confronto. MAE e R quadro accompagnano la lettura e non vengono usate per
-    selezionare: il rapporto fra RMSE e MAE dice se l'errore e' dominato da una
+    selezionare: il rapporto fra RMSE e MAE dice se l'errore è dominato da una
     coda di errori grandi, R quadro rende confrontabili insiemi con varianza del
     target diversa.
     """
@@ -148,7 +148,7 @@ def evaluate(
     non viene mai adattato, quindi nessuno stato di un fold sopravvive al
     successivo. Le metriche sono calcolate su ciascun fold e restituite
     separatamente, non aggregando le predizioni in un unico vettore: la
-    dispersione fra fold e' parte del risultato e va riportata.
+    dispersione fra fold è parte del risultato e va riportata.
 
     Ritorna il DataFrame delle metriche per fold e, se richiesto, il DataFrame
     delle predizioni fuori fold.
@@ -208,10 +208,10 @@ def evaluate(
 def summarize(fold_metrics: pd.DataFrame, label: str | None = None) -> pd.Series:
     """Riassume le metriche per fold in media e deviazione standard.
 
-    La deviazione standard e' calcolata sui fold e non e' l'errore standard
+    La deviazione standard è calcolata sui fold e non è l'errore standard
     della media: i fold condividono le righe di addestramento e non sono
-    indipendenti. E' una misura di dispersione, e come tale va letta: due
-    modelli il cui divario e' inferiore alla dispersione dei fold non sono
+    indipendenti. È una misura di dispersione, e come tale va letta: due
+    modelli il cui divario è inferiore alla dispersione dei fold non sono
     distinguibili sotto questo protocollo.
     """
     summary: dict[str, float | str | int] = {}
@@ -231,23 +231,23 @@ def evaluate_holdout(
     """Valutazione finale sull'insieme di verifica ufficiale.
 
     Lo stimatore viene riaddestrato su tutti i motori di addestramento e
-    valutato una sola volta. Va invocata a graduatoria gia' chiusa: il suo
+    valutato una sola volta. Va invocata a graduatoria già chiusa: il suo
     risultato non rientra in nessuna scelta.
 
     Sono prodotte tre letture. Su tutti i cicli delle traiettorie troncate, che
-    e' la lettura estesa. Sul solo ultimo ciclo di ciascuna unita', che e' la
-    forma con cui il dataset e' riportato in letteratura. E, se `y_test_raw` e'
-    fornito, sull'ultimo ciclo contro il target non censurato, che e' la
+    è la lettura estesa. Sul solo ultimo ciclo di ciascuna unità, che è la
+    forma con cui il dataset è riportato in letteratura. E, se `y_test_raw` è
+    fornito, sull'ultimo ciclo contro il target non censurato, che è la
     variante in cui la censura si applica all'addestramento ma non alla
     verifica.
 
-    Le tre letture non sono confrontabili fra loro ne' con l'errore in
-    cross-validation, perche' riguardano popolazioni di cicli diverse. Il
+    Le tre letture non sono confrontabili fra loro né con l'errore in
+    cross-validation, perché riguardano popolazioni di cicli diverse. Il
     troncamento casuale delle traiettorie di verifica ne sposta la composizione
-    verso la fase iniziale di vita, dove il target e' appiattito sulla soglia, e
-    riduce la variabilita' del target rispetto alle traiettorie complete. Un
-    errore assoluto piu' basso sulla verifica che in cross-validation e' quindi
-    atteso e non indica un trasferimento migliore: la quota di variabilita'
+    verso la fase iniziale di vita, dove il target è appiattito sulla soglia, e
+    riduce la variabilità del target rispetto alle traiettorie complete. Un
+    errore assoluto più basso sulla verifica che in cross-validation è quindi
+    atteso e non indica un trasferimento migliore: la quota di variabilità
     spiegata si legge sull'R quadro.
     """
     model = clone(estimator)

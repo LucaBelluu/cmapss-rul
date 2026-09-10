@@ -1,23 +1,23 @@
-"""Diagnostico: variabilita' dei modelli stocastici al variare del seme dello stimatore.
+"""Diagnostico: variabilità dei modelli stocastici al variare del seme dello stimatore.
 
 Ruolo nel progetto
     Il protocollo fissa un solo seme di stimatore per modello, uguale per tutti,
-    e la dispersione riportata in graduatoria e' quella fra le 15 partizioni. Per
+    e la dispersione riportata in graduatoria è quella fra le 15 partizioni. Per
     i modelli con una componente casuale interna (inizializzazione dei pesi di
     una rete, campionamento delle righe e delle colonne di un insieme di alberi)
-    quella dispersione non contiene la variabilita' dovuta al seme, che resta
-    percio' non misurata.
+    quella dispersione non contiene la variabilità dovuta al seme, che resta
+    perciò non misurata.
 
-    Il primo posto della graduatoria e' occupato su entrambi i sottoinsiemi da un
+    Il primo posto della graduatoria è occupato su entrambi i sottoinsiemi da un
     modello di questo tipo, e i modelli che lo seguono a distanza inferiore alla
-    soglia di leggibilita' sono anch'essi stocastici. Senza una misura di quella
-    variabilita' non e' possibile dire se il primo posto sia una proprieta' del
+    soglia di leggibilità sono anch'essi stocastici. Senza una misura di quella
+    variabilità non è possibile dire se il primo posto sia una proprietà del
     modello o dell'estrazione.
 
-    Il risultato e' diagnostico e non entra in graduatoria, come il controllo con
+    Il risultato è diagnostico e non entra in graduatoria, come il controllo con
     selezione annidata del blocco lineare. La graduatoria resta quella prodotta
     sotto il protocollo, con un seme per modello uguale per tutti: cambiare la
-    regola per i soli modelli stocastici romperebbe la parita' del confronto.
+    regola per i soli modelli stocastici romperebbe la parità del confronto.
 
 Cosa riceve
     La graduatoria in `experiments/final/`, il registro dei modelli e i dati
@@ -32,16 +32,16 @@ Cosa produce
     - `{SUBSET}_seed_diagnostic.csv`, una riga per modello e seme con media e
       dispersione sulle 15 partizioni;
     - `{SUBSET}_seed_summary.csv`, una riga per modello con la dispersione delle
-      medie fra semi, che e' la quantita' da confrontare con i divari della
+      medie fra semi, che è la quantità da confrontare con i divari della
       graduatoria.
 
     L'insieme di verifica ufficiale non viene letto.
 
 Controllo incorporato
-    Il primo seme dell'elenco e' quello del protocollo. Il punteggio ottenuto
+    Il primo seme dell'elenco è quello del protocollo. Il punteggio ottenuto
     con quel seme deve coincidere con quello registrato in graduatoria: se non
-    coincide, la ricostruzione del modello dagli artefatti non e' fedele e il
-    resto della lettura non ha valore. Il confronto e' eseguito e riportato.
+    coincide, la ricostruzione del modello dagli artefatti non è fedele e il
+    resto della lettura non ha valore. Il confronto è eseguito e riportato.
 
 Come si lancia
     python -m scripts.run_seed_diagnostic
@@ -66,18 +66,18 @@ OUTPUT_DIR = PROJECT_ROOT / "experiments" / "final"
 # Modelli sottoposti al diagnostico: quelli con una componente casuale interna
 # che si trovano nel gruppo di testa della graduatoria su almeno un
 # sottoinsieme. Gli altri modelli stocastici del confronto stanno oltre la
-# soglia di leggibilita' dal primo posto, dove una variabilita' dell'ordine del
+# soglia di leggibilità dal primo posto, dove una variabilità dell'ordine del
 # decimo di ciclo non cambia la lettura.
 STOCHASTIC_MODELS = ("mlp", "random_forest", "xgboost")
 
-# Semi dello stimatore. Il primo e' quello del protocollo e serve da controllo:
+# Semi dello stimatore. Il primo è quello del protocollo e serve da controllo:
 # deve riprodurre il punteggio in graduatoria.
 ESTIMATOR_SEEDS = (0, 1, 2, 3, 4)
 
 # Tolleranza sulla riproduzione del punteggio in graduatoria con il seme del
 # protocollo. Il valore assorbe le differenze di somma in virgola mobile fra
 # esecuzioni, non una ricostruzione infedele, che si manifesterebbe
-# sull'ordine del centesimo di ciclo o piu'.
+# sull'ordine del centesimo di ciclo o più.
 REPRODUCTION_TOLERANCE = 1e-6
 
 
@@ -153,7 +153,7 @@ def run_subset(subset: str, models: list[str], cap: int | None) -> dict:
         .sort_values("rmse_medio_fra_semi")
     )
 
-    print("\nvariabilita' della media sulle 15 partizioni al variare del seme")
+    print("\nvariabilità della media sulle 15 partizioni al variare del seme")
     print(summary.drop(columns=["subset", "label"]).to_string(index=False))
 
     return {
