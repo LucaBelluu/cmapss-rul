@@ -3122,3 +3122,121 @@ emergere una incoerenza fra artefatti che nessun controllo automatico aveva
 intercettato, perché la verifica di identità delle partizioni confronta le
 tabelle dei blocchi fra loro e non le tabelle derivate con le tabelle di
 partenza.
+
+## [14-09-2026] — Revisione finale del README e allineamento degli artefatti
+
+Ho riletto il README pubblicato controllando ogni affermazione numerica contro le
+tabelle di `results/`, il codice e i notebook dei laboratori del corso. Le correzioni
+non toccano risultati, protocollo o conclusioni: allineano il testo a artefatti già
+versionati.
+
+### Affermazioni numeriche corrette
+
+- Verifica delle partizioni: il testo riportava sedici confronti per sottoinsieme.
+  `verifica_partizioni.csv` ne ha otto per sottoinsieme (due baseline per quattro
+  blocchi) e sedici in totale sui due.
+- Ampiezza interna alla famiglia lineare: l'espressione "due ordini di grandezza sotto
+  la dispersione mediana" era inesatta. I valori misurati sono 0,03 cicli contro 1,18
+  su FD001 e 0,09 contro 1,45 su FD003, cioè un fattore 45 e un fattore 17. Il testo
+  riporta ora i valori.
+- Separazione fra bagging e foresta: il testo la dava a 0,21 e 0,34 dispersioni. Il
+  secondo valore veniva dalla colonna del divario dalla riga migliore, che su FD003 è
+  XGBoost e non la foresta; su FD001 coincideva solo perché lì la riga migliore è la
+  foresta. La distanza fra le due righe vale 0,30 cicli su FD001 e 0,24 su FD003, circa
+  un quinto della dispersione combinata in entrambi i casi. L'effetto risulta quindi
+  identico sui due sottoinsiemi e non diverso.
+- Esponente empirico del costo della stima a margine: da "fra 1,83 e 2,06" a "fra 1,83
+  e 2,00", che è l'intervallo dei sei casi in `costo_stima_margine.csv`.
+- Procedure di ricampionamento: il testo affermava che le medie si ordinano secondo la
+  numerosità della parte di addestramento, ed era smentito dalla tabella immediatamente
+  sopra, dove la partizione unica addestra su 70 motori e su FD003 produce comunque la
+  media più bassa. Ho riformulato dichiarando l'eccezione e collegandola all'escursione
+  della partizione unica, che rende la sua media la meno determinata della tabella.
+- Panoramica: "struttura a tre gradini che si ripete identica" contraddiceva la
+  correzione del 10-09. Ora afferma che si replica l'ordine dei gradini.
+
+### CORREZIONE: XGBoost non è fuori dal programma del corso
+
+Il README elencava XGBoost fra le quattro tecniche fuori programma, mentre la sua
+tabella di copertura lo attribuiva al laboratorio 10. Ho verificato sul notebook del
+laboratorio: il titolo è "Random Forest, AdaBoost, Gradient Boosting e XGBoost" e
+`XGBRegressor` ha una sezione propria sul problema di regressione. XGBoost è in
+programma. Le tecniche fuori programma sono tre: cross-validation con vincolo di
+gruppo, confronto appaiato fold per fold, conteggio delle inversioni.
+
+### Copertura del programma completata
+
+La tabella di copertura ometteva due laboratori che il progetto usa: il 6, le quattro
+procedure di ricampionamento, e il 12, K-Means, clustering gerarchico, silhouette e
+indice di Rand corretto. Motivo dell'omissione: la tabella elencava solo modelli in
+confronto. Ho aggiunto le due righe, cambiato l'intestazione della colonna in "Modello
+o tecnica" e spiegato perché quelle due non sono righe della graduatoria. Ho anche
+esteso il titolo della sezione sul numero di fold, che conteneva il confronto fra
+procedure di ricampionamento senza dichiararlo nell'indice.
+
+### Regola sui bordi: dichiarato il criterio di chiusura
+
+Il README enunciava la regola sulle configurazioni di bordo e la distinzione fra bordo
+vero e bordo strutturale, ma non il criterio con cui la catena di estensioni si chiude.
+Un lettore che apre le tabelle di diagnostica trova tre configurazioni finali ancora su
+un estremo e conclude che la regola non è stata applicata. Ho aggiunto il criterio
+(l'estensione che sposta il punteggio di almeno un ordine di grandezza meno della
+dispersione fra fold chiude la catena) e dichiarato nel blocco a margine i due estremi
+che restano, la penalizzazione minima del kernel lineare su entrambi i sottoinsiemi e
+l'architettura più capiente della rete su FD003.
+
+### CORREZIONE: la curva di convergenza della rete copre entrambi i sottoinsiemi
+
+La voce del 30-08 riporta la curva sul solo FD001, e il README ne ereditava la
+formulazione. L'artefatto del sondaggio contiene anche le righe di FD003: la misura
+esiste su entrambi i sottoinsiemi.
+
+| Sottoinsieme | Architettura | Passo | Perdita, 100 e 3.000 iterazioni | RMSE, 100 e 3.000 iterazioni |
+|---|---|---|---|---|
+| FD001 | (32,) | 1e-3 | 128,7 e 113,6 | 16,08 e 16,16 |
+| FD001 | (64, 32) | 1e-4 | 155,5 e 92,5 | 17,49 e 16,88 |
+| FD001 | (64, 32) | 1e-3 | 114,0 e 74,0 | 15,86 e 18,87 |
+| FD003 | (32,) | 1e-3 | 95,1 e 75,3 | 16,31 e 15,28 |
+| FD003 | (64, 32) | 1e-4 | 113,7 e 65,2 | 17,80 e 15,52 |
+| FD003 | (64, 32) | 1e-3 | 77,3 e 45,2 | 14,89 e 17,89 |
+
+La risalita dell'errore si ripete su entrambi i sottoinsiemi sull'architettura a due
+strati con passo 1e-3, con tre cicli di peggioramento in entrambi i casi. Sulle altre
+due configurazioni l'errore resta fermo o scende. La risalita non è quindi una
+proprietà del numero di iterazioni in sé, ma di quel numero in presenza di capacità
+sufficiente a sovradattare: è un argomento più forte per tenere il tetto in griglia,
+perché se l'effetto fosse uniforme un valore fisso basterebbe per tutte le
+configurazioni. Ho riscritto il passaggio del blocco a margine con i valori di entrambi
+i sottoinsiemi e vi ho incorporato la figura. Cautela: la curva è misurata su una sola
+partizione e non ha misura di variabilità, quindi sostiene un confronto di forme e non
+un ordinamento fra configurazioni.
+
+### Problema tecnico: figura versionata rimasta indietro
+
+Sintomo: `convergenza_rete.png` mostrava i due pannelli di FD003 vuoti, con assi da 0 a
+1 e nessuna curva, mentre l'artefatto conteneva le righe di quel sottoinsieme. Causa
+radice: la figura era stata salvata da un'esecuzione del notebook precedente alla
+presenza di quelle righe ed è sopravvissuta alle riesecuzioni successive. Soluzione:
+riesecuzione dei sei notebook in kernel pulito. Il controllo che ne è seguito è il
+risultato di valore della verifica: `git status` segnala un solo file modificato in
+`results/`, quindi le altre 50 tabelle e 50 figure versionate coincidono con quello che
+il codice produce oggi dagli artefatti attuali.
+
+### Correzioni minori
+
+- Intestazione del README: le tre righe di testata erano un unico paragrafo e GitHub,
+  che nei file `.md` segue CommonMark, le fondeva in una riga sola. Ora sono tre
+  paragrafi.
+- Crediti: rimossi statsmodels e seaborn, che compaiono in `requirements.txt` perché
+  l'ambiente è stato congelato per intero ma non sono importati da nessun file del
+  progetto.
+- Incorporata `correlazione_sensori.png` nel punto in cui il testo riporta che su FD001
+  una sola coppia di sensori su 105 supera 0,9: la figura era già versionata e non
+  usata.
+
+### Problema di lavorazione: file sovrascritto
+
+Ho sovrascritto `DIARIO.md` con il contenuto del README nell'albero di lavoro. Il file
+era committato, quindi `git restore` ha annullato l'errore senza perdite. L'episodio è
+stato intercettato dal controllo di `git status` prima del commit, che ha segnalato un
+file modificato in una fase che non lo prevedeva.
