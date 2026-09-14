@@ -1,0 +1,9 @@
+# Attributi dei file per il calcolo delle statistiche di linguaggio.
+# I notebook di notebooks/ sono il livello di analisi e narrazione del
+# progetto: leggono artefatti già prodotti e non contengono il codice
+# eseguibile, che sta in src/ e scripts/. Il loro peso in byte è dominato
+# dagli output incorporati (figure e tabelle codificate) e non dal codice.
+# Senza questa regola la repository risulta composta per il 94,6 per cento
+# da Jupyter Notebook, in contraddizione con la struttura descritta nel
+# README.
+*.ipynb linguist-documentation
