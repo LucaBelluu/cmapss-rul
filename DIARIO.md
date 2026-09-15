@@ -3364,3 +3364,4 @@ l'indice laterale espone le 37 sezioni e che i sei notebook rendono, compresi i
 tre che superano 1,2 MB. Sul sorgente avevo già controllato la struttura dei
 titoli, la coerenza delle 17 tabelle, l'esistenza dei percorsi di tutte le
 figure e dei link relativi, e l'assenza di HTML grezzo.
+
