@@ -3239,4 +3239,128 @@ il codice produce oggi dagli artefatti attuali.
 Ho sovrascritto `DIARIO.md` con il contenuto del README nell'albero di lavoro. Il file
 era committato, quindi `git restore` ha annullato l'errore senza perdite. L'episodio è
 stato intercettato dal controllo di `git status` prima del commit, che ha segnalato un
-file modificato in una fase che non lo prevedeva.
+git restore notebooks/03_modelli_non_lineari.ipynb
+git status --shortfile modificato in una fase che non lo prevedeva.
+
+## [14-09-2026] — Verifica di consegna: metadati della repository, resa della pagina pubblicata e correzione di una figura
+
+### Controllo dello stato della repository
+
+Ho verificato l'allineamento fra albero locale e remoto e la composizione di
+ciò che è versionato: albero pulito, `HEAD` e `origin/main` coincidenti, 149
+file tracciati, 51 figure in `results/figures`, 50 tabelle in
+`results/tables`, e in `data/` ed `experiments/` i soli due `.gitkeep`. Ho
+provato le regole di `.gitignore` su percorsi campione con `git check-ignore -v`
+invece di darle per buone: i dati grezzi, gli artefatti di esperimento, i
+modelli serializzati e i file di sistema risultano esclusi, e ciascuna
+esclusione riporta la riga di `.gitignore` che la produce.
+
+### Metadati della repository
+
+Ho compilato la descrizione e i topics, che erano vuoti. Descrizione in
+italiano, coerente con il README, che è il documento che il lettore trova
+subito sotto. Topics in inglese, perché sono il meccanismo di indicizzazione
+della piattaforma e in italiano non intercettano ricerche. Il campo del sito
+resta vuoto: non esiste una pagina del progetto, e puntarlo alla repository
+stessa non aggiunge informazione.
+
+### Licenza
+
+Ho riconsiderato l'assenza di licenza, decisa il 10-09, e ho confermato la
+scelta. Motivo: la repository è consegna d'esame e portfolio, non materiale
+destinato al riuso, e nessuna delle alternative valutate cambia qualcosa sul
+piano pratico. Ho scartato MIT, che sarebbe l'opzione più riconoscibile ma il
+cui testo parla di software e si applica male a un documento argomentativo di
+655 righe e a 51 figure; ho scartato la coppia MIT per il codice più CC BY per
+i documenti, che è la scelta legalmente precisa ma aggiunge due file e un
+paragrafo al README per un guadagno nullo; ho scartato le licenze Creative
+Commons non commerciali, sconsigliate dalla stessa Creative Commons per il
+software. In assenza di licenza vale il diritto d'autore predefinito, e i
+termini della piattaforma consentono ai visitatori la lettura e il fork.
+
+### Statistiche di linguaggio
+
+La barra dei linguaggi attribuiva alla repository il 94,6 per cento di Jupyter
+Notebook contro il 5,4 di Python, perché il peso in byte dei notebook è
+dominato dagli output incorporati e non dal codice. Il risultato contraddiceva
+la struttura descritta nel README, dove il codice eseguibile sono le 9.135
+righe di `src/` e `scripts/` e i notebook sono il livello di analisi. Ho
+aggiunto `.gitattributes` con una sola regola che marca `*.ipynb` come
+documentazione. Ho scartato `linguist-vendored`, che dichiarerebbe codice di
+terze parti ed è falso, e `linguist-detectable=false`, che otterrebbe lo stesso
+risultato senza dirne il motivo. ESITO: la barra riporta ora Python al 100 per
+cento.
+
+### Etichette sovrapposte nella figura di complessità ed errore
+
+Sintomo: nella figura `complessita_errore_non_lineare.png`, prodotta dal
+notebook 03, le etichette "Regressione polinomiale" e "Step functions" del
+pannello FD001 risultavano stampate una sopra l'altra e illeggibili, e sui due
+pannelli alcune etichette uscivano dal riquadro degli assi.
+
+Causa: ogni etichetta veniva posata con lo stesso spostamento fisso di 6 punti
+a destra e 4 in alto rispetto al proprio punto. Su FD001 i due modelli distano
+0,060 cicli in verticale (17,752 contro 17,692), cioè circa 4 punti
+tipografici, quindi le etichette cadevano sulla stessa riga, e la prima è larga
+più del doppio dello spazio orizzontale che separa i due punti (189 e 324
+termini stimati). Su FD003 gli stessi due modelli distano 0,52 cicli e non
+collidono: il difetto si manifestava su un pannello solo. La stessa figura
+presentava un secondo difetto della stessa natura sull'asse orizzontale, dove
+la formattazione predefinita della scala logaritmica etichettava anche le
+tacche minori e le sovrapponeva su un intervallo di poco superiore alla decade.
+
+Soluzione: ordinamento dei punti per ascissa, alternanza delle etichette sopra
+e sotto il punto, allineamento verso l'interno del riquadro per i due punti
+estremi, tacche esplicite a valori tondi al posto della formattazione
+logaritmica predefinita. Ho verificato la correzione misurando i riquadri di
+testo dopo il disegno, sui valori veri delle due tabelle versionate: la
+versione precedente presenta una sovrapposizione e quattro etichette fuori
+dagli assi, quella corretta nessuna delle due cose su entrambi i pannelli.
+
+Ho controllato se il difetto fosse isolato o di classe, cercando nei sei
+notebook le celle che posano testo sui grafici. Sono quattro. Le due figure che
+compaiono nel README, `graduatoria_fra_sottoinsiemi.png` e
+`vertice_confronto_appaiato.png`, sono pulite: la prima usa linee di richiamo e
+una colonna di etichette, che è la soluzione corretta quando i punti sono
+ventidue. In `curve_griglie_rete.png`, che resta nel solo notebook 05, due
+etichette di architettura toccano il bordo del pannello e risultano tagliate di
+poco. Le lascio come sono: restano leggibili, e la riesecuzione di un secondo
+notebook in fase di consegna allarga la superficie da riverificare senza
+guadagno proporzionato. Lo registro come difetto noto.
+
+### Disallineamento fra sessione interattiva e file su disco
+
+Durante la correzione la figura versionata è rimasta ferma alla versione
+vecchia per tre riesecuzioni consecutive, pur mostrando la versione nuova
+nell'output della cella. Causa: avevo modificato la cella nella sessione
+interattiva senza salvare il notebook, e la riesecuzione con
+`jupyter nbconvert --execute --inplace` operava sul file su disco, che
+conteneva ancora il codice precedente e rigenerava quindi la figura
+precedente. Il sintomo diagnostico era che il PNG risultava riscritto per data
+di modifica ma identico per contenuto, con la stessa impronta e la stessa
+dimensione al byte della versione in cronologia.
+
+Ho risolto applicando la modifica al file `.ipynb` con uno script esterno
+invece che dall'interfaccia, con due asserzioni che verificano di agire sulla
+cella giusta e che questa contenga ancora il codice atteso, così che un
+fallimento si manifesti come errore e non come silenzio. Lo script è stato
+cancellato dopo l'uso e non è versionato.
+
+Da questo episodio ricavo il criterio di verifica che ho poi adottato:
+l'impronta del file prodotto, confrontata con `git hash-object`, e non
+l'immagine mostrata dalla cella. Un secondo elemento utile è emerso per
+contrasto: rieseguendo il codice invariato la figura è tornata identica al
+byte, il che conferma che le figure si rigenerano in modo deterministico e che
+`git status` è un rilevatore affidabile di cosa cambia davvero.
+
+ESITO: correzione committata, impronta del PNG passata da `2ba483cd` a
+`0ffa7994`, con i soli due file previsti modificati.
+
+### Resa della pagina pubblicata
+
+Ho verificato a video, da utente non autenticato, che il README rende per
+intero fino a "Crediti e riferimenti", che le 18 figure si caricano tutte, che
+l'indice laterale espone le 37 sezioni e che i sei notebook rendono, compresi i
+tre che superano 1,2 MB. Sul sorgente avevo già controllato la struttura dei
+titoli, la coerenza delle 17 tabelle, l'esistenza dei percorsi di tutte le
+figure e dei link relativi, e l'assenza di HTML grezzo.
